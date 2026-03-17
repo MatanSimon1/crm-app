@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRM Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- SETUP SCREEN -->
+  <div id="setup-screen" class="screen active">
+    <div class="setup-wrap">
+      <div class="setup-logo">
+        <div class="logo-mark">CRM</div>
+        <div class="logo-sub">Lead Manager</div>
+      </div>
+      <div class="setup-card">
+        <h1>Connect your Google Sheet</h1>
+        <p class="setup-desc">Paste the link to your client's Google Sheet and we'll generate a full CRM interface for it.</p>
+
+        <div class="form-group">
+          <label>Google Sheet URL</label>
+          <input type="url" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
+        </div>
+        <div class="form-group">
+          <label>Google API Key <a class="hint-link" href="https://console.cloud.google.com/apis/credentials" target="_blank">Get one here ↗</a></label>
+          <input type="text" id="api-key" placeholder="AIza..." />
+          <div class="field-hint">Required to read & write to the sheet. Stored only in your browser.</div>
+        </div>
+        <div class="form-group">
+          <label>Sheet tab name <span class="optional">(optional, default: Main CRM)</span></label>
+          <input type="text" id="sheet-tab" placeholder="Main CRM" />
+        </div>
+
+        <button class="btn-primary" onclick="connectSheet()">
+          <span>Connect Sheet</span>
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+
+        <div id="setup-error" class="error-msg" style="display:none;"></div>
+
+        <div class="setup-tip">
+          <strong>Before connecting:</strong> Make the sheet public or share it with your Google service account. 
+          Also enable the <em>Google Sheets API</em> in your Google Cloud Console.
+        </div>
+      </div>
+
+      <div class="saved-list" id="saved-list"></div>
+    </div>
+  </div>
+
+  <!-- CRM DASHBOARD -->
+  <div id="crm-screen" class="screen">
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <div class="s-logo">CRM</div>
+        <button class="btn-back" onclick="goBack()" title="Switch sheet">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+      <div class="s-client-name" id="s-client-name">Client</div>
+      <div class="s-sheet-link">
+        <a id="s-sheet-href" href="#" target="_blank">Open Sheet ↗</a>
+      </div>
+
+      <div class="s-stats" id="s-stats"></div>
+
+      <div class="sidebar-footer">
+        <button class="btn-sync" onclick="syncFromSheet()" id="sync-btn">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          Sync from sheet
+        </button>
+      </div>
+    </div>
+
+    <div class="main-area">
+      <div class="top-bar">
+        <div class="filters-row">
+          <div class="search-wrap">
+            <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="search" placeholder="Search name or phone..." oninput="renderTable()" />
+          </div>
+          <select id="filter-status" onchange="renderTable()">
+            <option value="">All statuses</option>
+            <option>ליד חדש</option>
+            <option>ביקש פרטים נוספים בוואטסאפ</option>
+            <option>פולואפ</option>
+            <option>לא רלוונטי</option>
+            <option>סגירה</option>
+          </select>
+          <select id="filter-platform" onchange="renderTable()">
+            <option value="">All platforms</option>
+            <option value="fb">Facebook</option>
+            <option value="ig">Instagram</option>
+          </select>
+        </div>
+        <button class="btn-add" onclick="openModal()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Add lead
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="leads-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-field="date" onclick="sortBy('date')">Date <span class="sort-arrow">↕</span></th>
+              <th class="sortable" data-field="name" onclick="sortBy('name')">Name <span class="sort-arrow">↕</span></th>
+              <th>Phone</th>
+              <th class="sortable" data-field="status" onclick="sortBy('status')">Status <span class="sort-arrow">↕</span></th>
+              <th>Notes</th>
+              <th>Income/mo</th>
+              <th>Platform</th>
+              <th>Ad creative</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div id="empty-state" class="empty-state" style="display:none;">
+          <div class="empty-icon">◎</div>
+          <div>No leads found</div>
+        </div>
+      </div>
+
+      <div class="table-footer">
+        <span id="row-count" class="row-count"></span>
+        <div id="sync-status" class="sync-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAD MODAL -->
+  <div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Add new lead</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="f-date" />
+          </div>
+          <div class="form-group">
+            <label>Platform</label>
+            <select id="f-platform">
+              <option value="fb">Facebook</option>
+              <option value="ig">Instagram</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full name *</label>
+            <input type="text" id="f-name" placeholder="Lead name" />
+          </div>
+          <div class="form-group">
+            <label>Phone *</label>
+            <input type="tel" id="f-phone" placeholder="05XXXXXXXX" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Lead status</label>
+          <div class="status-pills" id="status-pills">
+            <button class="pill active" data-val="ליד חדש" onclick="selectStatus(this)">New lead</button>
+            <button class="pill" data-val="ביקש פרטים נוספים בוואטסאפ" onclick="selectStatus(this)">Details req.</button>
+            <button class="pill" data-val="פולואפ" onclick="selectStatus(this)">Follow up</button>
+            <button class="pill" data-val="לא רלוונטי" onclick="selectStatus(this)">Irrelevant</button>
+            <button class="pill" data-val="סגירה" onclick="selectStatus(this)">Closed ✓</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="f-notes" placeholder="Additional description..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Monthly income (₪)</label>
+          <input type="text" id="f-income" placeholder="e.g. 8000" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Campaign</label>
+            <input type="text" id="f-campaign" />
+          </div>
+          <div class="form-group">
+            <label>Ad creative</label>
+            <input type="text" id="f-ad" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveLead()">
+          <span id="save-btn-text">Save lead</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
