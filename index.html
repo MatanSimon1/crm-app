@@ -105,42 +105,6 @@
 
 <!-- CRM -->
 <div id="crm-screen" class="screen">
-  <div class="sidebar">
-    <div class="sidebar-top">
-      <div class="logo-wrap">
-        <img src="logo.jpg" alt="" class="crm-logo-img"/>
-        <span class="brand-txt">MetricMinds</span>
-      </div>
-      <div style="display:flex;gap:4px">
-        <button class="btn-back" id="btn-back-admin" onclick="goBackAdmin()" style="display:none" title="חזור">←</button>
-        <button class="btn-logout-small" onclick="doLogout()" title="התנתק">⏻</button>
-      </div>
-    </div>
-    <div class="s-client-name" id="s-client-name">לקוח</div>
-    <div class="month-filter-wrap">
-      <div class="month-filter-title">תקופה</div>
-      <select id="month-filter" onchange="onMonthFilterChange()" class="month-select">
-        <option value="all">כל הזמן</option>
-      </select>
-    </div>
-    <div class="nav-tabs">
-      <button class="nav-tab active" onclick="switchTab('leads',this)">לידים</button>
-      <button class="nav-tab" onclick="switchTab('analytics',this)">מספרים</button>
-    </div>
-    <div class="s-stats" id="s-stats"></div>
-    <div class="fin-section" id="fin-section" style="display:none;">
-      <div class="fin-title">פיננסים</div>
-      <div class="fin-inputs">
-        <div class="fin-field">
-          <label>תקציב קמפיין לתקופה (₪)</label>
-          <input type="number" id="budget" value="1500" oninput="onBudgetChange()"/>
-          <div class="fin-hint">שנה לפי החודש שנבחר</div>
-        </div>
-      </div>
-      <div id="fin-results"></div>
-    </div>
-  </div>
-
   <div class="main-area">
     <div id="view-leads">
       <div class="top-bar">
@@ -212,7 +176,7 @@
       <div class="form-row">
         <div class="form-group"><label>תאריך</label><input type="date" id="f-date"/></div>
         <div class="form-group"><label>פלטפורמה</label>
-          <select id="f-platform"><option value="fb">Facebook</option><option value="ig">Instagram</option><option value="other">אחר</option></select>
+          <select id="f-platform"><option value="manual">Manual</option><option value="fb">Facebook</option><option value="ig">Instagram</option><option value="other">אחר</option></select>
         </div>
       </div>
       <div class="form-row">
@@ -307,16 +271,17 @@
         <div class="client-name-big" id="s-client-name">—</div>
       </div>
 
-      <div class="sidebar-section">
-        <div class="sidebar-section-label">תקופה</div>
-        <select id="month-filter" onchange="onMonthFilterChange()" class="month-select">
-          <option value="all">כל הזמן</option>
-        </select>
-      </div>
-
-      <div class="nav-tabs">
-        <button class="nav-tab active" onclick="switchTab('leads',this)">לידים</button>
-        <button class="nav-tab" onclick="switchTab('analytics',this)">מספרים</button>
+      <div class="mobile-controls-row">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">תקופה</div>
+          <select id="month-filter" onchange="onMonthFilterChange()" class="month-select">
+            <option value="all">כל הזמן</option>
+          </select>
+        </div>
+        <div class="nav-tabs">
+          <button class="nav-tab active" onclick="switchTab('leads',this)">לידים</button>
+          <button class="nav-tab" onclick="switchTab('analytics',this)">סטטיסטיקה</button>
+        </div>
       </div>
       <div class="s-stats" id="s-stats"></div>
       <div class="fin-section" id="fin-section" style="display:none;">
