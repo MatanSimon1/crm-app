@@ -104,8 +104,8 @@ input::placeholder{color:var(--text3)}
 .fin-val{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent)}
 
 /* MAIN */
-.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
-#view-leads{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#view-leads{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
 #view-analytics{flex:1;overflow-y:auto;max-height:calc(100vh - 0px)}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
 .filters-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
@@ -119,7 +119,7 @@ input::placeholder{color:var(--text3)}
 /* TABLE */
 .desktop-only{display:block}
 .mobile-only{display:none}
-.table-wrap{flex:1;overflow:auto}
+.table-wrap{flex:1;overflow:auto;min-height:0}
 table{width:100%;border-collapse:collapse;min-width:750px}
 thead{position:sticky;top:0;z-index:1}
 thead tr{background:var(--bg2)}
@@ -276,3 +276,19 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 .page-footer{text-align:center;padding:8px 16px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);background:var(--bg)}
 .page-footer strong{color:var(--text2)}
 .table-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 13px;border-top:1px solid var(--border);font-size:11px;background:var(--bg2)}
+
+.lead-card-reg{border-color:rgba(74,222,128,0.2)!important;background:rgba(74,222,128,0.03)!important}
+
+/* Call/WA buttons */
+.action-cell{display:flex;gap:3px;align-items:center;justify-content:flex-end;white-space:nowrap}
+.btn-call,.btn-wa{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:13px;cursor:pointer;transition:all .2s;opacity:0}
+tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
+.btn-call:hover{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.35)}
+.btn-wa:hover{background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.3)}
+.btn-call-card,.btn-wa-card{background:none;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:15px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.btn-call-card:hover{background:rgba(74,222,128,.12)}
+.btn-wa-card:hover{background:rgba(37,211,102,.1)}
+
+/* Page footer */
+.page-footer{text-align:center;padding:7px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
+.page-footer strong{color:var(--text2)}
