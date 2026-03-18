@@ -288,19 +288,25 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="page-footer">עוצב ופותח על ידי <strong>MetricMinds</strong></div>
 <script src="users.js"></script>
 <script src="app.js"></script>
 </body>
 </html>    <div class="sidebar">
-      <!-- Client logo + name at top -->
-      <div class="client-header-block">
-        <div class="client-header-top">
-          <img id="client-logo-img" src="logo.jpg" alt="" class="client-logo-img"/>
-          <div style="display:flex;gap:4px">
-            <button class="btn-back" id="btn-back-admin" onclick="goBackAdmin()" style="display:none" title="חזור">←</button>
-            <button class="btn-logout-small" onclick="doLogout()" title="התנתק">⏻</button>
-          </div>
+      <!-- Sidebar top: logo + controls -->
+      <div class="sidebar-top">
+        <div class="logo-wrap">
+          <img src="logo.jpg" alt="" class="crm-logo-img"/>
+          <span class="brand-txt">MetricMinds</span>
         </div>
+        <div style="display:flex;gap:4px">
+          <button class="btn-back" id="btn-back-admin" onclick="goBackAdmin()" style="display:none" title="חזור">←</button>
+          <button class="btn-logout-small" onclick="doLogout()" title="התנתק">⏻</button>
+        </div>
+      </div>
+      <!-- Client name prominent -->
+      <div class="client-name-block">
+        <div class="client-name-label">לקוח</div>
         <div class="client-name-big" id="s-client-name">—</div>
       </div>
 
@@ -325,9 +331,5 @@
         </div>
         <div id="fin-results"></div>
       </div>
-      <!-- MetricMinds branding at bottom -->
-      <div class="metricminds-footer">
-        <img src="logo.jpg" alt="" class="footer-logo-img"/>
-        <span class="footer-brand-txt">MetricMinds</span>
-      </div>
+
     </div>
