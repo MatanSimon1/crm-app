@@ -106,7 +106,7 @@ input::placeholder{color:var(--text3)}
 /* MAIN */
 .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 #view-leads{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
-#view-analytics{flex:1;overflow-y:auto;max-height:calc(100vh - 0px)}
+#view-analytics{overflow-y:auto;flex:1;min-height:0}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
 .filters-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 .search-wrap{position:relative}
@@ -254,11 +254,9 @@ tr:hover .btn-delete-row{color:var(--text3)}
 .brand-txt{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.04em}
 
 /* Page footer */
-.page-footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:6px;font-size:11px;color:var(--text3);background:transparent;pointer-events:none;z-index:10}
-.page-footer strong{color:var(--text2)}
 
 /* Fix analytics overflow - no content below last card */
-#view-analytics{flex:1;overflow-y:auto;padding:1.1rem;padding-bottom:2.5rem}
+#view-analytics{overflow-y:auto;padding:1.1rem;flex:1;min-height:0}
 
 /* Call / WhatsApp buttons in table */
 .action-cell{display:flex;gap:4px;align-items:center;justify-content:flex-end;white-space:nowrap}
@@ -277,7 +275,7 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 .page-footer strong{color:var(--text2)}
 .table-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 13px;border-top:1px solid var(--border);font-size:11px;background:var(--bg2)}
 
-.lead-card-reg{border-color:rgba(74,222,128,0.2)!important;background:rgba(74,222,128,0.03)!important}
+.lead-card-reg{border-color:rgba(74,222,128,0.35)!important;background:rgba(74,222,128,0.07)!important;border-right:3px solid rgba(74,222,128,0.6)!important}
 
 /* Call/WA buttons */
 .action-cell{display:flex;gap:3px;align-items:center;justify-content:flex-end;white-space:nowrap}
@@ -290,5 +288,5 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 .btn-wa-card:hover{background:rgba(37,211,102,.1)}
 
 /* Page footer */
-.page-footer{text-align:center;padding:7px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
+.page-footer{text-align:center;padding:8px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);background:var(--bg2)}
 .page-footer strong{color:var(--text2)}
