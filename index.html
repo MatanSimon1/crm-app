@@ -82,12 +82,17 @@
         <input type="url" id="cm-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..."/>
         <div class="field-hint">הגיליון חייב להיות משותף כ"כל מי שיש לו קישור"</div>
       </div>
+      <div class="form-group">
+        <label>לוגו הלקוח <span class="optional">(קישור לתמונה — אופציונלי)</span></label>
+        <input type="url" id="cm-logo-url" placeholder="https://..."/>
+        <div class="field-hint">קישור ישיר לתמונה (PNG/JPG)</div>
+      </div>
       <div class="form-row">
         <div class="form-group"><label>שם לשונית <span class="optional">(ברירת מחדל: Main CRM)</span></label><input type="text" id="cm-sheet-tab" placeholder="Main CRM"/></div>
         <div class="form-group">
           <label>ממוצע חודשים שנרשם נשאר</label>
           <input type="number" id="cm-avg-months" value="5" min="1"/>
-          <div class="field-hint">לחישוב LTV</div>
+          <div class="field-hint">לחישוב ערך לקוח</div>
         </div>
       </div>
     </div>
@@ -287,20 +292,15 @@
 <script src="app.js"></script>
 </body>
 </html>    <div class="sidebar">
-      <div class="sidebar-top">
-        <div class="logo-wrap">
-          <img src="logo.jpg" alt="" class="crm-logo-img"/>
-          <span class="brand-txt">MetricMinds</span>
+      <!-- Client logo + name at top -->
+      <div class="client-header-block">
+        <div class="client-header-top">
+          <img id="client-logo-img" src="logo.jpg" alt="" class="client-logo-img"/>
+          <div style="display:flex;gap:4px">
+            <button class="btn-back" id="btn-back-admin" onclick="goBackAdmin()" style="display:none" title="חזור">←</button>
+            <button class="btn-logout-small" onclick="doLogout()" title="התנתק">⏻</button>
+          </div>
         </div>
-        <div style="display:flex;gap:4px">
-          <button class="btn-back" id="btn-back-admin" onclick="goBackAdmin()" style="display:none" title="חזור">←</button>
-          <button class="btn-logout-small" onclick="doLogout()" title="התנתק">⏻</button>
-        </div>
-      </div>
-
-      <!-- Client name prominent -->
-      <div class="client-name-block">
-        <div class="client-name-label">לקוח</div>
         <div class="client-name-big" id="s-client-name">—</div>
       </div>
 
@@ -319,10 +319,15 @@
       <div class="fin-section" id="fin-section" style="display:none;">
         <div class="fin-title">פיננסים</div>
         <div class="fin-field">
-          <label>תקציב קמפיין (₪)</label>
+          <label id="budget-label">תקציב קמפיין (₪)</label>
           <input type="number" id="budget" value="0" oninput="onBudgetChange()"/>
           <div class="fin-hint">לכל חודש בנפרד</div>
         </div>
         <div id="fin-results"></div>
+      </div>
+      <!-- MetricMinds branding at bottom -->
+      <div class="metricminds-footer">
+        <img src="logo.jpg" alt="" class="footer-logo-img"/>
+        <span class="footer-brand-txt">MetricMinds</span>
       </div>
     </div>
