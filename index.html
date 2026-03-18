@@ -158,11 +158,7 @@
             <option>נרשם</option>
             <option>לא נרשם</option>
           </select>
-          <select id="filter-platform" onchange="renderTable()">
-            <option value="">כל הפלטפורמות</option>
-            <option value="fb">Facebook</option>
-            <option value="ig">Instagram</option>
-          </select>
+
         </div>
         <button class="btn-add" onclick="openModal()">+ הוסף ליד</button>
       </div>
@@ -189,6 +185,7 @@
         <span id="row-count"></span>
         <div id="sync-status" class="sync-status"></div>
       </div>
+      <div class="page-footer">עוצב ופותח על ידי <strong>MetricMinds</strong></div>
     </div>
     <div id="view-analytics" style="display:none;padding:1.1rem;overflow-y:auto;flex:1;">
       <div id="kpi-row" class="kpi-row"></div>
@@ -278,7 +275,7 @@
         <div class="status-pills" id="ie-status-pills"></div>
       </div>
       <div class="form-group"><label>הערות</label><textarea id="ie-notes" placeholder="הערות נוספות..."></textarea></div>
-      <div class="form-group"><label>הכנסה חודשית (₪)</label><input type="text" id="ie-income" placeholder="8000"/></div>
+      <div class="form-group" id="ie-income-group" style="display:none;"><label>הכנסה חודשית (₪)</label><input type="text" id="ie-income" placeholder="8000"/></div>
     </div>
     <div class="modal-footer">
       <button class="btn-primary" id="ie-save-btn" onclick="saveInlineEdit()" style="width:auto;padding:8px 20px;margin:0">שמור שינויים</button>
@@ -288,7 +285,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="page-footer">עוצב ופותח על ידי <strong>MetricMinds</strong></div>
+
 <script src="users.js"></script>
 <script src="app.js"></script>
 </body>
