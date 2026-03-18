@@ -181,11 +181,21 @@ function parseDate(raw){
   if(!raw) return '';
   const s=String(raw).trim();
   if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-  const isoM=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  // For ISO timestamps like 2026-03-17T22:00:00.000Z, convert to local Israel time
+  const isoFull=s.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
+  if(isoFull){
+    const d=new Date(s);
+    // Add 2 hours for Israel time (UTC+2), or 3 during DST
+    const offset=2*3600*1000;
+    const local=new Date(d.getTime()+offset);
+    return `${String(local.getUTCDate()).padStart(2,'0')}/${String(local.getUTCMonth()+1).padStart(2,'0')}/${local.getUTCFullYear()}`;
+  }
+  const isoM=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if(isoM) return `${isoM[3]}/${isoM[2]}/${isoM[1]}`;
   const n=parseFloat(s);
   if(!isNaN(n)&&n>1000){
-    const d=new Date((n-25569)*86400*1000);
+    // Add 12 hours to avoid timezone off-by-one (Israel UTC+2)
+    const d=new Date((n-25569)*86400*1000 + 12*3600*1000);
     return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
   }
   return s;
