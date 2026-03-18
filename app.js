@@ -53,7 +53,7 @@ async function doLogin(){
   document.getElementById('login-error').style.display='none';
   const btn=document.querySelector('#login-screen .btn-primary');
   btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
-  if((u.toLowerCase()==='admin'||u==='מנהל')&&p===ADMIN_PASSWORD){
+  if(ADMIN_USERS.some(a=>a.u.toLowerCase()===u.toLowerCase()&&a.p===String(p))){
     sessionStorage.setItem('crm_session',JSON.stringify({role:'admin'}));
     btn.innerHTML='כניסה';btn.disabled=false;
     showAdminScreen();return;
@@ -415,7 +415,7 @@ function renderTable(){
   const isAdmin=isAdminSession();
   if(tbody)tbody.innerHTML=rows.map(l=>{
     const isReg=l.status==='נרשם';
-    const rowStyle=isReg?'background:rgba(74,222,128,0.05);':'';
+    const rowStyle=isReg?'background:rgba(74,222,128,0.08);border-right:3px solid rgba(74,222,128,0.5);':'border-right:3px solid transparent;';
     return `<tr onclick="openInlineEdit(${l.id})" style="cursor:pointer;${rowStyle}">
     <td class="date-cell">${l.date||'—'}</td>
     <td class="name-cell">${esc(l.name)}</td>
