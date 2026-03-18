@@ -169,8 +169,9 @@
             <th>טלפון</th>
             <th onclick="sortBy('status')">סטטוס ↕</th>
             <th>הערות</th>
-            <th>הכנסה חודשית</th>
+            <th>הכנסה</th>
             <th>פלטפורמה</th>
+            <th>קמפיין</th>
             <th>מודעה</th>
             <th></th>
           </tr></thead>
@@ -236,6 +237,47 @@
     <div class="modal-footer">
       <button class="btn-primary" onclick="saveLead()" style="width:auto;padding:8px 20px;margin:0"><span id="save-btn-text">שמור לגיליון</span></button>
       <button class="btn-cancel" onclick="closeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- INLINE EDIT MODAL -->
+<div class="modal-overlay" id="inline-edit-modal" onclick="if(event.target===this)closeInlineEdit()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>עריכת ליד</h2>
+      <button class="modal-close" onclick="closeInlineEdit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="ie-header-info">
+        <div class="ie-lead-name" id="ie-name-val"></div>
+        <div class="ie-meta">
+          <span id="ie-date"></span>
+          <span id="ie-platform"></span>
+        </div>
+      </div>
+
+      <div class="ie-divider">פרטים לקריאה בלבד</div>
+      <div class="ie-readonly-grid">
+        <div class="ie-readonly-item"><div class="ie-readonly-label">קמפיין</div><div class="ie-readonly-val" id="ie-campaign"></div></div>
+        <div class="ie-readonly-item"><div class="ie-readonly-label">מודעה</div><div class="ie-readonly-val" id="ie-ad"></div></div>
+      </div>
+
+      <div class="ie-divider">ניתן לעריכה</div>
+      <div class="form-row">
+        <div class="form-group"><label>שם</label><input type="text" id="ie-name"/></div>
+        <div class="form-group"><label>טלפון</label><input type="tel" id="ie-phone"/></div>
+      </div>
+      <div class="form-group"><label>סטטוס</label>
+        <div class="status-pills" id="ie-status-pills"></div>
+      </div>
+      <div class="form-group"><label>הערות</label><textarea id="ie-notes" placeholder="הערות נוספות..."></textarea></div>
+      <div class="form-group"><label>הכנסה חודשית (₪)</label><input type="text" id="ie-income" placeholder="8000"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="ie-save-btn" onclick="saveInlineEdit()" style="width:auto;padding:8px 20px;margin:0">שמור שינויים</button>
+      <button class="btn-cancel" onclick="closeInlineEdit()">ביטול</button>
     </div>
   </div>
 </div>
