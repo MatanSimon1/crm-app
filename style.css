@@ -305,3 +305,28 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 #view-leads{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
 #view-analytics{overflow-y:auto;flex:1;min-height:0;padding:1.1rem;padding-bottom:1rem}
+
+/* ── NEW CLEAN SIDEBAR LAYOUT ── */
+.sb-client-block{padding:.85rem .9rem;margin-bottom:.6rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r)}
+.sb-client-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.sb-client-name{font-size:16px;font-weight:700;color:var(--text);line-height:1.2;word-break:break-word}
+
+.sb-period-block{margin-bottom:.75rem}
+.sb-section-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+
+/* Remove old client-name-block styles that conflict */
+.client-name-block{display:none}
+.mobile-controls-row{display:none}
+.sidebar-section{display:none}
+
+/* Mobile override */
+@media(max-width:680px){
+  .sidebar{flex-direction:column!important;padding:.75rem!important}
+  .sidebar-top{margin-bottom:.5rem}
+  .sb-client-block{padding:.6rem .75rem;margin-bottom:.5rem}
+  .sb-client-name{font-size:18px}
+  .nav-tabs{margin-bottom:.5rem}
+  .sb-period-block{margin-bottom:.5rem}
+  .s-stats{display:none!important}
+  .fin-section{display:none!important}
+}
