@@ -1,4 +1,4 @@
-function isAdminSession(){return JSON.parse(sessionStorage.getItem('crm_session')||'{}').role==='admin';}
+function isAdminSession(){return JSON.parse(localStorage.getItem('crm_session')||'{}').role==='admin';}
 const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 let state={leads:[],spreadsheetId:'',sheetTab:'Main CRM',clientName:'',clientId:'',sortField:'date',sortDir:-1,editingId:null,nextId:1,avgMonths:5,colMap:null,budgets:{}};
 let selectedMonth='all';
@@ -32,7 +32,7 @@ function getCurrentBudget(){return parseFloat(state.budgets[getBudgetKey()])||0;
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 document.addEventListener('DOMContentLoaded',()=>{
-  const saved=sessionStorage.getItem('crm_session');
+  const saved=localStorage.getItem('crm_session');
   if(saved){
     const s=JSON.parse(saved);
     if(s.role==='admin') showAdminScreen();
@@ -54,7 +54,7 @@ async function doLogin(){
   const btn=document.querySelector('#login-screen .btn-primary');
   btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
   if(ADMIN_USERS.some(a=>a.u.toLowerCase()===u.toLowerCase()&&a.p===String(p))){
-    sessionStorage.setItem('crm_session',JSON.stringify({role:'admin'}));
+    localStorage.setItem('crm_session',JSON.stringify({role:'admin'}));
     btn.innerHTML='כניסה';btn.disabled=false;
     showAdminScreen();return;
   }
@@ -62,14 +62,14 @@ async function doLogin(){
     const clients=await fetchClients();
     // *** FIX: compare as strings so numeric passwords work ***
     const c=clients.find(x=>x.username.toLowerCase()===u.toLowerCase()&&String(x.password)===String(p)&&x.active!==false);
-    if(c){sessionStorage.setItem('crm_session',JSON.stringify({role:'client',clientId:c.id}));loadClientCRM(c);}
+    if(c){localStorage.setItem('crm_session',JSON.stringify({role:'client',clientId:c.id}));loadClientCRM(c);}
     else{document.getElementById('login-error').textContent='שם משתמש או סיסמא שגויים';document.getElementById('login-error').style.display='block';}
   }catch(e){document.getElementById('login-error').textContent='שגיאת חיבור: '+e.message;document.getElementById('login-error').style.display='block';}
   btn.innerHTML='כניסה';btn.disabled=false;
 }
 
 function doLogout(){
-  sessionStorage.removeItem('crm_session');
+  localStorage.removeItem('crm_session');
   if(autoSyncInterval)clearInterval(autoSyncInterval);
   showLoginScreen();document.getElementById('login-password').value='';
 }
@@ -167,7 +167,7 @@ async function loadClientCRM(client){
   hideAll();document.getElementById('crm-screen').classList.add('active');
   document.getElementById('s-client-name').textContent=client.name;
 
-  const isAdmin=JSON.parse(sessionStorage.getItem('crm_session')||'{}').role==='admin';
+  const isAdmin=JSON.parse(localStorage.getItem('crm_session')||'{}').role==='admin';
   document.getElementById('btn-back-admin').style.display=isAdmin?'flex':'none';
   setSyncStatus('טוען...','saving');
   try{
@@ -271,7 +271,7 @@ function startAutoSync(){
     if(!ie.classList.contains('open')&&!mo.classList.contains('open')){
       try{await fetchFromSheet();buildMonthFilter();renderTable();renderSidebar();setSyncStatus('עודכן '+new Date().toLocaleTimeString('he-IL'),'success');}catch{}
     }
-  },30000);
+  },120000);
 }
 function setSyncStatus(msg,type){const el=document.getElementById('sync-status');if(el){el.textContent=msg;el.className='sync-status '+(type||'');}}
 
@@ -536,7 +536,7 @@ async function saveLead(){
 }
 function confirmDelete(id){
   // Only show confirm for admin — clients see nothing
-  const session=JSON.parse(sessionStorage.getItem('crm_session')||'{}');
+  const session=JSON.parse(localStorage.getItem('crm_session')||'{}');
   if(session.role!=='admin'){showToast('אין הרשאה למחיקה','error');return;}
   const lead=state.leads.find(x=>x.id===id);if(!lead)return;
   if(!confirm(`⚠️ מחיקה סופית\n\nהאם למחוק את "${lead.name}"?\nפעולה זו אינה ניתנת לביטול.`))return;
@@ -567,4 +567,11 @@ function waLead(phone){
   let clean=phone.replace(/[^0-9]/g,'');
   if(clean.startsWith('0')) clean='972'+clean.slice(1);
   window.open('https://wa.me/'+clean,'_blank');
+}
+
+function togglePassVis(){
+  const inp=document.getElementById('login-password');
+  const btn=document.getElementById('pass-eye');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
 }
