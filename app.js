@@ -103,7 +103,7 @@ function renderAdminClients(){
 function openAddClient(){
   document.getElementById('client-modal-title').textContent='הוסף לקוח';
   document.getElementById('cm-id').value='';
-  ['cm-name','cm-username','cm-password','cm-sheet-url'].forEach(id=>document.getElementById(id).value='');
+  ['cm-name','cm-username','cm-password','cm-sheet-url','cm-logo-url'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cm-sheet-tab').value='Main CRM';
   document.getElementById('cm-avg-months').value='5';
   document.getElementById('client-modal').classList.add('open');
@@ -119,6 +119,7 @@ function editClient(id){
   document.getElementById('cm-sheet-url').value=c.sheetUrl||'';
   document.getElementById('cm-sheet-tab').value=c.sheetTab||'Main CRM';
   document.getElementById('cm-avg-months').value=c.avgMonths||5;
+  document.getElementById('cm-logo-url').value=c.logoUrl||'';
   document.getElementById('client-modal').classList.add('open');
 }
 async function saveClient(){
@@ -133,7 +134,8 @@ async function saveClient(){
   const sheetId=extractSheetId(sheetUrl);
   if(!sheetId){showAdminToast('קישור גיליון לא תקין','error');return;}
   const btn=document.querySelector('#client-modal .btn-primary');btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
-  const client={id:id||Date.now().toString(),name,username,password,sheetUrl,sheetId,sheetTab,avgMonths,active:true};
+  const logoUrl=document.getElementById('cm-logo-url').value.trim();
+  const client={id:id||Date.now().toString(),name,username,password,sheetUrl,sheetId,sheetTab,avgMonths,logoUrl,active:true};
   try{
     await pushSaveClient(client);
     document.getElementById('client-modal').classList.remove('open');
@@ -164,7 +166,9 @@ async function loadClientCRM(client){
   state.clientName=client.name;state.clientId=String(client.id);state.avgMonths=client.avgMonths||5;
   hideAll();document.getElementById('crm-screen').classList.add('active');
   document.getElementById('s-client-name').textContent=client.name;
-  const mn=document.getElementById('main-client-name');if(mn)mn.textContent=client.name;
+  // Set client logo
+  const logoEl=document.getElementById('client-logo-img');
+  if(logoEl) logoEl.src=client.logoUrl||'logo.jpg';
   const isAdmin=JSON.parse(sessionStorage.getItem('crm_session')||'{}').role==='admin';
   document.getElementById('btn-back-admin').style.display=isAdmin?'flex':'none';
   setSyncStatus('טוען...','saving');
@@ -273,7 +277,7 @@ function switchTab(tab,btn){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
   document.getElementById('view-leads').style.display=tab==='leads'?'flex':'none';
   document.getElementById('view-analytics').style.display=tab==='analytics'?'block':'none';
-  document.getElementById('fin-section').style.display=tab==='analytics'?'block':'none';
+  document.getElementById('fin-section').style.display=(tab==='analytics'&&selectedMonth!=='all')?'block':'none';
   if(tab==='analytics'){renderFinance();renderAnalytics();}
 }
 
@@ -290,7 +294,11 @@ function buildMonthFilter(){
 function onMonthFilterChange(){
   selectedMonth=document.getElementById('month-filter').value;
   updateBudgetInput();renderTable();renderSidebar();
-  if(document.getElementById('view-analytics').style.display!=='none'){renderFinance();renderAnalytics();}
+  // Show budget only for specific month, not "all"
+  const finSection=document.getElementById('fin-section');
+  const analyticsVisible=document.getElementById('view-analytics').style.display!=='none';
+  if(finSection&&analyticsVisible) finSection.style.display=(selectedMonth!=='all')?'block':'none';
+  if(analyticsVisible){renderFinance();renderAnalytics();}
 }
 function getFilteredByMonth(leads){
   if(selectedMonth==='all')return leads;
@@ -342,9 +350,9 @@ function renderFinance(){
   el.innerHTML=`
     <div class="fin-row"><span class="fin-label">עלות לליד</span><span class="fin-val">₪${costPerLead.toLocaleString()}</span></div>
     <div class="fin-row"><span class="fin-label">ממוצע הכנסה</span><span class="fin-val">₪${avgMonthlyInc.toLocaleString()}</span></div>
-    <div class="fin-row"><span class="fin-label">LTV</span><span class="fin-val">₪${ltv.toLocaleString()}</span></div>
+    <div class="fin-row"><span class="fin-label">ערך לקוח</span><span class="fin-val">₪${ltv.toLocaleString()}</span></div>
     <div class="fin-row"><span class="fin-label">סה"כ הכנסות</span><span class="fin-val">₪${totalRev.toLocaleString()}</span></div>
-    <div class="fin-row"><span class="fin-label">ROAS</span><span class="fin-val">${roas}</span></div>`;
+    <div class="fin-row"><span class="fin-label">החזר על השקעה</span><span class="fin-val">${roas}</span></div>`;
 }
 
 function renderAnalytics(){
@@ -361,8 +369,8 @@ function renderAnalytics(){
     ${kpiCard('נרשמו',reg,reg+' מתוך '+total,'var(--green)')}
     ${kpiCard('המרה',conv+'%','','var(--accent)')}
     ${kpiCard('עלות לליד',costPerLead>0?'₪'+costPerLead:'—','','var(--amber)')}
-    ${kpiCard('LTV',ltv>0?'₪'+ltv.toLocaleString():'—','x'+avgM+' חודשים','var(--green)')}
-    ${kpiCard('ROAS',roas,'','var(--accent)')}`;
+    ${kpiCard('ערך לקוח',ltv>0?'₪'+ltv.toLocaleString():'—','ממוצע x'+avgM+' חודשים','var(--green)')}
+    ${kpiCard('החזר על השקעה',roas,'','var(--accent)')}`;
   const statuses=[{s:'ליד חדש',c:'#60a5fa'},{s:'ביקש פרטים נוספים בוואטסאפ',c:'#4ade80'},{s:'פולואפ',c:'#fbbf24'},{s:'לא רלוונטי',c:'#f87171'},{s:'נרשם',c:'#d4ff5c'},{s:'לא נרשם',c:'#9ca3af'}];
   document.getElementById('status-bars').innerHTML=statuses.map(({s,c})=>{
     const cnt=l.filter(x=>x.status===s).length;const pct=total>0?Math.round(cnt/total*100):0;
@@ -392,6 +400,7 @@ function getFiltered(){
   });
 }
 function badgeClass(s){if(s==='ליד חדש')return 'badge-new';if(s==='ביקש פרטים נוספים בוואטסאפ')return 'badge-details';if(s==='פולואפ')return 'badge-followup';if(s==='נרשם')return 'badge-registered';if(s==='לא נרשם')return 'badge-notregistered';return 'badge-irrelevant';}
+function badgeLabel(s){if(s==='ביקש פרטים נוספים בוואטסאפ')return 'ביקש פרטים בווצאפ';return s;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function platformLabel(p){if(!p)return '—';const lp=String(p).toLowerCase();if(lp==='fb'||lp.includes('face'))return 'Facebook';if(lp==='ig'||lp.includes('insta'))return 'Instagram';return p;}
 function platformDot(p){const lp=String(p||'').toLowerCase();if(lp==='fb'||lp.includes('face'))return 'dot-fb';if(lp==='ig'||lp.includes('insta'))return 'dot-ig';return '';}
