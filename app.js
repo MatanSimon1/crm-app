@@ -290,7 +290,7 @@ function getFiltered(){
   }).sort((a,b)=>{const av=a[state.sortField]||'',bv=b[state.sortField]||'';return av>bv?state.sortDir:av<bv?-state.sortDir:0;});
 }
 function badgeClass(s){if(s==='ליד חדש')return 'badge-new';if(s==='ביקש פרטים נוספים בוואטסאפ')return 'badge-details';if(s==='פולואפ')return 'badge-followup';if(s==='נרשם')return 'badge-registered';if(s==='לא נרשם')return 'badge-notregistered';return 'badge-irrelevant';}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function renderTable(){
   const rows=getFiltered();
