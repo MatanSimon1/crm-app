@@ -290,3 +290,18 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 /* Page footer */
 .page-footer{text-align:center;padding:8px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);background:var(--bg2)}
 .page-footer strong{color:var(--text2)}
+
+/* Manual platform dot */
+.dot-manual{background:#a78bfa}
+
+/* Mobile controls row */
+.mobile-controls-row{display:flex;align-items:center;gap:.5rem}
+
+/* Footer - appears at bottom of content, not floating */
+.page-footer{text-align:center;padding:8px 16px;font-size:11px;color:var(--text3);background:var(--bg2);flex-shrink:0}
+.page-footer strong{color:var(--accent)}
+
+/* Fix empty space - main area flex */
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#view-leads{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+#view-analytics{overflow-y:auto;flex:1;min-height:0;padding:1.1rem;padding-bottom:1rem}
