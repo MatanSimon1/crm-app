@@ -412,25 +412,39 @@ function renderTable(){
   document.getElementById('row-count').textContent=rows.length+' מתוך '+getFilteredByMonth(state.leads).length+' לידים';
   if(!rows.length){if(tbody)tbody.innerHTML='';if(empty)empty.style.display='flex';if(cards)cards.innerHTML='<div style="padding:3rem;text-align:center;color:var(--text3)">לא נמצאו לידים</div>';return;}
   if(empty)empty.style.display='none';
-  if(tbody)tbody.innerHTML=rows.map(l=>`<tr onclick="openInlineEdit(${l.id})" style="cursor:pointer">
+  const isAdmin=isAdminSession();
+  if(tbody)tbody.innerHTML=rows.map(l=>{
+    const isReg=l.status==='נרשם';
+    const rowStyle=isReg?'background:rgba(74,222,128,0.05);':'';
+    return `<tr onclick="openInlineEdit(${l.id})" style="cursor:pointer;${rowStyle}">
     <td class="date-cell">${l.date||'—'}</td>
     <td class="name-cell">${esc(l.name)}</td>
     <td class="phone-cell">${l.phone}</td>
-    <td><span class="badge ${badgeClass(l.status)}">${esc(l.status)}</span></td>
+    <td><span class="badge ${badgeClass(l.status)}">${esc(badgeLabel(l.status))}</span></td>
     <td><div class="tooltip-cell"><span class="cell-truncate">${esc(l.notes)||'—'}</span>${l.notes?`<div class="tooltip-box">${esc(l.notes)}</div>`:''}</div></td>
-    <td class="income-cell">${l.income?'₪'+esc(l.income):'—'}</td>
+    <td class="income-cell">${isReg&&l.income?'₪'+esc(l.income):isReg?'—':''}</td>
     <td><div class="platform-cell"><div class="platform-dot ${platformDot(l.platform)}"></div><span>${platformLabel(l.platform)}</span></div></td>
     <td><div class="tooltip-cell"><span class="cell-truncate">${esc(l.campaign)||'—'}</span>${l.campaign?`<div class="tooltip-box">${esc(l.campaign)}</div>`:''}</div></td>
     <td><div class="tooltip-cell"><span class="cell-truncate">${esc(l.ad)||'—'}</span>${l.ad?`<div class="tooltip-box">${esc(l.ad)}</div>`:''}</div></td>
-    <td><button class="btn-row danger" onclick="event.stopPropagation();deleteLead(${l.id})">✕</button></td>
-  </tr>`).join('');
-  if(cards)cards.innerHTML=rows.map(l=>`<div class="lead-card" onclick="openInlineEdit(${l.id})">
+    <td class="action-cell">
+      <button class="btn-call" onclick="event.stopPropagation();callLead('${l.phone}')" title="התקשר">📞</button>
+      <button class="btn-wa" onclick="event.stopPropagation();waLead('${l.phone}')" title="ווצאפ">💬</button>
+      ${isAdmin?`<button class="btn-delete-row" onclick="event.stopPropagation();confirmDelete(${l.id})" title="מחק">✕</button>`:''}
+    </td>
+  </tr>`;}).join('');
+  if(cards)cards.innerHTML=rows.map(l=>{
+    const isReg=l.status==='נרשם';
+    return `<div class="lead-card${isReg?' lead-card-reg':''}" onclick="openInlineEdit(${l.id})">
     <div class="lead-card-top"><div class="lead-card-name">${esc(l.name)}</div><div class="lead-card-date">${l.date||'—'}</div></div>
     <div class="lead-card-phone">${l.phone}</div>
-    <div class="lead-card-row"><span class="badge ${badgeClass(l.status)}">${esc(l.status)}</span>${l.income?'<span style="color:var(--green);font-size:12px;font-family:monospace">₪'+esc(l.income)+'</span>':''}</div>
+    <div class="lead-card-row"><span class="badge ${badgeClass(l.status)}">${esc(badgeLabel(l.status))}</span>${isReg&&l.income?'<span style="color:var(--green);font-size:12px;font-family:monospace">₪'+esc(l.income)+'</span>':''}</div>
     ${l.notes?'<div style="font-size:12px;color:var(--text2);margin-top:6px">'+esc(l.notes)+'</div>':''}
-    <div class="lead-card-actions"><button class="btn-card" onclick="event.stopPropagation();openInlineEdit(${l.id})">ערוך</button><button class="btn-card danger" onclick="event.stopPropagation();deleteLead(${l.id})">מחק</button></div>
-  </div>`).join('');
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="lead-card-edit" style="flex:2" onclick="event.stopPropagation();openInlineEdit(${l.id})">ערוך ←</button>
+      <button class="btn-call-card" onclick="event.stopPropagation();callLead('${l.phone}')" title="התקשר">📞</button>
+      <button class="btn-wa-card" onclick="event.stopPropagation();waLead('${l.phone}')" title="ווצאפ">💬</button>
+    </div>
+  </div>`;}).join('');
 }
 function sortBy(f){if(state.sortField===f)state.sortDir*=-1;else{state.sortField=f;state.sortDir=1;}renderTable();}
 
@@ -464,12 +478,20 @@ function ieGetStatus(){const a=document.querySelector('#ie-status-pills .pill.ac
 function closeInlineEdit(){document.getElementById('inline-edit-modal').classList.remove('open');}
 async function saveInlineEdit(){
   const l=state.leads.find(x=>x.id===state.editingId);if(!l)return;
+  const status=ieGetStatus();
+  const income=document.getElementById('ie-income').value.trim();
+  // Validate: income required when נרשם
+  if(status==='נרשם'&&!income){
+    document.getElementById('ie-income').style.borderColor='var(--red)';
+    document.getElementById('ie-income').placeholder='חובה להכניס הכנסה חודשית!';
+    showToast('אנא הכנס הכנסה חודשית','error');
+    return;
+  }
+  document.getElementById('ie-income').style.borderColor='';
   const updated={...l,
     name:document.getElementById('ie-name').value.trim()||l.name,
     phone:document.getElementById('ie-phone').value.trim()||l.phone,
-    status:ieGetStatus(),
-    notes:document.getElementById('ie-notes').value.trim(),
-    income:document.getElementById('ie-income').value.trim()
+    status,notes:document.getElementById('ie-notes').value.trim(),income
   };
   state.leads=state.leads.map(x=>x.id===state.editingId?updated:x);
   closeInlineEdit();renderTable();renderSidebar();
