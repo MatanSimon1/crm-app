@@ -217,3 +217,19 @@ tr:hover .row-actions{opacity:1}
   .top-bar{padding:.6rem .75rem}
   .form-row{grid-template-columns:1fr}
 }
+
+/* TOOLTIP ON HOVER */
+.tooltip-cell{position:relative;max-width:160px}
+.cell-truncate{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:12px;cursor:default}
+.tooltip-box{display:none;position:absolute;top:100%;right:0;z-index:50;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-size:12px;color:var(--text);white-space:normal;min-width:180px;max-width:320px;word-break:break-word;box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:3px}
+.tooltip-cell:hover .tooltip-box{display:block}
+
+/* INLINE EDIT MODAL */
+.ie-header-info{display:flex;flex-direction:column;gap:3px;margin-bottom:1.1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.ie-lead-name{font-size:17px;font-weight:600}
+.ie-meta{display:flex;gap:12px;font-size:12px;color:var(--text3)}
+.ie-readonly-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;background:var(--bg3);border-radius:var(--r);padding:10px 12px}
+.ie-readonly-item{display:flex;flex-direction:column;gap:2px}
+.ie-readonly-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.ie-readonly-val{font-size:12px;color:var(--text2);word-break:break-word}
+.ie-divider{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;margin-top:4px}
