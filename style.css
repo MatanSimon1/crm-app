@@ -69,18 +69,17 @@ input::placeholder{color:var(--text3)}
 /* CRM LAYOUT */
 #crm-screen{flex-direction:row;height:100vh}
 .sidebar{width:var(--sw);min-width:var(--sw);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:.9rem;overflow-y:auto}
-.sidebar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
-.logo-wrap{display:flex;align-items:center;gap:7px}
-.crm-logo-img{width:28px;height:28px;border-radius:6px;object-fit:cover}
-.brand-txt{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.04em}
 .btn-back{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:13px;transition:all .15s}
 .btn-back:hover{border-color:var(--border2);color:var(--text)}
 
 /* Client name big */
-.client-name-block{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:.85rem .9rem;margin-bottom:.85rem;text-align:center}
-.client-name-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
-.client-name-big{font-size:15px;font-weight:700;color:var(--text);line-height:1.2;word-break:break-word}
-
+.client-header-block{margin-bottom:.85rem;padding-bottom:.85rem;border-bottom:1px solid var(--border)}
+.client-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.client-logo-img{width:38px;height:38px;border-radius:8px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.client-name-big{font-size:16px;font-weight:700;color:var(--text);line-height:1.2;word-break:break-word}
+.metricminds-footer{margin-top:auto;padding-top:.8rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.footer-logo-img{width:20px;height:20px;border-radius:4px;object-fit:cover;opacity:.7}
+.footer-brand-txt{font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.04em}
 .sidebar-section{margin-bottom:.75rem}
 .sidebar-section-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
 .month-select{width:100%;font-size:12px;padding:7px 10px}
