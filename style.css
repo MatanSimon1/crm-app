@@ -259,3 +259,20 @@ tr:hover .btn-delete-row{color:var(--text3)}
 
 /* Fix analytics overflow - no content below last card */
 #view-analytics{flex:1;overflow-y:auto;padding:1.1rem;padding-bottom:2.5rem}
+
+/* Call / WhatsApp buttons in table */
+.action-cell{display:flex;gap:4px;align-items:center;justify-content:flex-end;white-space:nowrap}
+.btn-call,.btn-wa{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:13px;cursor:pointer;transition:all .15s;opacity:0}
+tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
+.btn-call:hover{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3)}
+.btn-wa:hover{background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.3)}
+
+/* Call / WhatsApp buttons on mobile cards */
+.btn-call-card,.btn-wa-card{background:none;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:14px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.btn-call-card:hover{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3)}
+.btn-wa-card:hover{background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.3)}
+
+/* Footer fix - proper layout */
+.page-footer{text-align:center;padding:8px 16px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);background:var(--bg)}
+.page-footer strong{color:var(--text2)}
+.table-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 13px;border-top:1px solid var(--border);font-size:11px;background:var(--bg2)}
