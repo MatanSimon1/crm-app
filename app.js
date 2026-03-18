@@ -2,7 +2,6 @@ const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','י
 let state={leads:[],spreadsheetId:'',sheetTab:'Main CRM',clientName:'',clientId:'',sortField:'date',sortDir:-1,editingId:null,nextId:1,avgMonths:5,colMap:null,budgets:{}};
 let selectedMonth='all';
 
-// ── CLIENT STORAGE (Apps Script = synced everywhere) ───────────────────────
 async function fetchClients(){
   const res=await fetch(APPS_SCRIPT_URL+'?action=getClients');
   const d=await res.json();
@@ -10,34 +9,27 @@ async function fetchClients(){
   return d.clients||[];
 }
 async function pushSaveClient(client){
-  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'saveClient',client})});
-  await sleep(1000);
+  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveClient',client})});
+  await sleep(1200);
 }
 async function pushDeleteClient(clientId){
-  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'deleteClient',clientId})});
-  await sleep(1000);
+  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteClient',clientId})});
+  await sleep(1200);
 }
-
-// ── BUDGET STORAGE (per client per month) ─────────────────────────────────
 async function fetchBudgets(clientId){
-  const res=await fetch(APPS_SCRIPT_URL+'?action=getBudgets&clientId='+encodeURIComponent(clientId));
-  const d=await res.json();
-  if(d.status==='error') return {};
-  return d.budgets||{};
+  try{
+    const res=await fetch(APPS_SCRIPT_URL+'?action=getBudgets&clientId='+encodeURIComponent(clientId));
+    const d=await res.json();
+    return d.budgets||{};
+  }catch{return{};}
 }
 async function saveBudget(clientId,month,budget){
-  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'saveBudget',clientId,month,budget})});
+  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveBudget',clientId,month,budget})});
 }
-
 function getBudgetKey(){return selectedMonth==='all'?'all':selectedMonth;}
-function getCurrentBudget(){return state.budgets[getBudgetKey()]||0;}
-
+function getCurrentBudget(){return parseFloat(state.budgets[getBudgetKey()])||0;}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// ── INIT ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
   const saved=sessionStorage.getItem('crm_session');
   if(saved){
@@ -48,24 +40,18 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 async function reloadClientSession(s){
-  try{
-    const clients=await fetchClients();
-    const c=clients.find(x=>x.id===s.clientId);
-    if(c) loadClientCRM(c);else showLoginScreen();
-  }catch{showLoginScreen();}
+  try{const clients=await fetchClients();const c=clients.find(x=>x.id===s.clientId);if(c)loadClientCRM(c);else showLoginScreen();}
+  catch{showLoginScreen();}
 }
-
 function showLoginScreen(){hideAll();document.getElementById('login-screen').classList.add('active');}
 function hideAll(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));}
 
-// ── LOGIN ──────────────────────────────────────────────────────────────────
 async function doLogin(){
   const u=document.getElementById('login-username').value.trim();
   const p=document.getElementById('login-password').value;
   document.getElementById('login-error').style.display='none';
   const btn=document.querySelector('#login-screen .btn-primary');
   btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
-
   if((u.toLowerCase()==='admin'||u==='מנהל')&&p===ADMIN_PASSWORD){
     sessionStorage.setItem('crm_session',JSON.stringify({role:'admin'}));
     btn.innerHTML='כניסה';btn.disabled=false;
@@ -73,9 +59,10 @@ async function doLogin(){
   }
   try{
     const clients=await fetchClients();
-    const c=clients.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p&&x.active!==false);
+    // *** FIX: compare as strings so numeric passwords work ***
+    const c=clients.find(x=>x.username.toLowerCase()===u.toLowerCase()&&String(x.password)===String(p)&&x.active!==false);
     if(c){sessionStorage.setItem('crm_session',JSON.stringify({role:'client',clientId:c.id}));loadClientCRM(c);}
-    else document.getElementById('login-error').style.display='block';
+    else{document.getElementById('login-error').textContent='שם משתמש או סיסמא שגויים';document.getElementById('login-error').style.display='block';}
   }catch(e){document.getElementById('login-error').textContent='שגיאת חיבור: '+e.message;document.getElementById('login-error').style.display='block';}
   btn.innerHTML='כניסה';btn.disabled=false;
 }
@@ -86,18 +73,16 @@ function doLogout(){
   showLoginScreen();document.getElementById('login-password').value='';
 }
 
-// ── ADMIN ──────────────────────────────────────────────────────────────────
 let adminClients=[];
 async function showAdminScreen(){
   hideAll();document.getElementById('admin-screen').classList.add('active');
-  document.getElementById('client-list').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">טוען...</div>';
+  document.getElementById('client-list').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">טוען לקוחות...</div>';
   try{
     adminClients=await fetchClients();
     renderAdminClients();
     document.getElementById('admin-stats').innerHTML='<span style="color:var(--text2);font-size:12px">'+adminClients.length+' לקוחות</span>';
   }catch(e){document.getElementById('client-list').innerHTML='<div style="color:var(--red);padding:2rem">שגיאה: '+e.message+'</div>';}
 }
-
 function renderAdminClients(){
   const el=document.getElementById('client-list');
   if(!adminClients.length){el.innerHTML='<div style="color:var(--text3);font-size:14px;padding:2rem;text-align:center">עדיין אין לקוחות — לחץ "הוסף לקוח" ↑</div>';return;}
@@ -114,7 +99,6 @@ function renderAdminClients(){
       </div>
     </div>`).join('');
 }
-
 function openAddClient(){
   document.getElementById('client-modal-title').textContent='הוסף לקוח';
   document.getElementById('cm-id').value='';
@@ -130,13 +114,12 @@ function editClient(id){
   document.getElementById('cm-id').value=c.id;
   document.getElementById('cm-name').value=c.name;
   document.getElementById('cm-username').value=c.username;
-  document.getElementById('cm-password').value=c.password;
+  document.getElementById('cm-password').value=String(c.password);
   document.getElementById('cm-sheet-url').value=c.sheetUrl||'';
   document.getElementById('cm-sheet-tab').value=c.sheetTab||'Main CRM';
   document.getElementById('cm-avg-months').value=c.avgMonths||5;
   document.getElementById('client-modal').classList.add('open');
 }
-
 async function saveClient(){
   const id=document.getElementById('cm-id').value;
   const name=document.getElementById('cm-name').value.trim();
@@ -158,47 +141,43 @@ async function saveClient(){
   }catch(e){showAdminToast('שגיאה: '+e.message,'error');}
   btn.innerHTML='שמור';btn.disabled=false;
 }
-
 async function deleteClient(id){
   const c=adminClients.find(x=>x.id===id);if(!c)return;
   if(!confirm('למחוק את הלקוח "'+c.name+'"?'))return;
   try{await pushDeleteClient(id);showAdminToast('לקוח נמחק','success');await showAdminScreen();}
   catch(e){showAdminToast('שגיאה','error');}
 }
-
 function adminOpenClient(id){
   const c=adminClients.find(x=>x.id===id);if(!c)return;
   document.getElementById('btn-back-admin').style.display='flex';loadClientCRM(c);
 }
 function goBackAdmin(){if(autoSyncInterval)clearInterval(autoSyncInterval);showAdminScreen();}
-
 let adminToastTimer=null;
 function showAdminToast(msg,type){
   const t=document.getElementById('admin-toast');t.textContent=msg;t.className='admin-toast show '+(type||'');
   if(adminToastTimer)clearTimeout(adminToastTimer);adminToastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// ── LOAD CLIENT ────────────────────────────────────────────────────────────
 async function loadClientCRM(client){
   state.spreadsheetId=client.sheetId;state.sheetTab=client.sheetTab||'Main CRM';
-  state.clientName=client.name;state.clientId=client.id;state.avgMonths=client.avgMonths||5;
+  state.clientName=client.name;state.clientId=String(client.id);state.avgMonths=client.avgMonths||5;
   hideAll();document.getElementById('crm-screen').classList.add('active');
   document.getElementById('s-client-name').textContent=client.name;
   const isAdmin=JSON.parse(sessionStorage.getItem('crm_session')||'{}').role==='admin';
   document.getElementById('btn-back-admin').style.display=isAdmin?'flex':'none';
   setSyncStatus('טוען...','saving');
   try{
-    const [,budgets]=await Promise.all([fetchFromSheet(),fetchBudgets(client.id)]);
+    await fetchFromSheet();
+    const budgets=await fetchBudgets(String(client.id));
     state.budgets=budgets;
     buildMonthFilter();renderTable();renderSidebar();updateBudgetInput();
     setSyncStatus('נטען ✓','success');startAutoSync();
   }catch(e){setSyncStatus('שגיאה: '+e.message,'error');showToast('שגיאה: '+e.message,'error');}
 }
 
-// ── DATE UTILS ─────────────────────────────────────────────────────────────
 function parseDate(raw){
   if(!raw) return '';
-  const s=String(raw);
+  const s=String(raw).trim();
   if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
   const isoM=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(isoM) return `${isoM[3]}/${isoM[2]}/${isoM[1]}`;
@@ -210,8 +189,8 @@ function parseDate(raw){
   return s;
 }
 
-// ── FETCH ──────────────────────────────────────────────────────────────────
 function extractSheetId(url){const m=url.match(/\/d\/([a-zA-Z0-9-_]+)/);return m?m[1]:null;}
+
 async function fetchFromSheet(){
   const url=APPS_SCRIPT_URL+'?action=read&sheetId='+encodeURIComponent(state.spreadsheetId)+'&tab='+encodeURIComponent(state.sheetTab);
   const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);
@@ -230,25 +209,30 @@ async function fetchFromSheet(){
   if(col.campaign===-1) col.campaign=len>=9?6:len>=8?5:-1;
   if(col.ad===-1) col.ad=len>=9?7:len>=8?6:-1;
   if(col.platform===-1) col.platform=len>=9?8:len>=8?7:-1;
-  state.colMap=col;
-  state.leads=[];state.nextId=1;
+  state.colMap=col;state.leads=[];state.nextId=1;
   for(let i=1;i<rows.length;i++){
     const r=rows[i];const name=String(r[col.name]||'').trim();if(!name)continue;
-    state.leads.push({id:state.nextId++,rowIndex:i+1,date:parseDate(String(r[col.date]||'')),name,
-      phone:String(r[col.phone]||''),status:String(r[col.status]||''),notes:String(r[col.notes]||''),
-      income:col.income>=0?String(r[col.income]||''):'',campaign:col.campaign>=0?String(r[col.campaign]||''):'',
-      ad:col.ad>=0?String(r[col.ad]||''):'',platform:String(col.platform>=0?(r[col.platform]||''):'').toLowerCase()});
+    state.leads.push({id:state.nextId++,rowIndex:i+1,
+      date:parseDate(String(r[col.date]||'')),name,
+      phone:String(r[col.phone]||''),status:String(r[col.status]||''),
+      notes:String(r[col.notes]||''),
+      income:col.income>=0?String(r[col.income]||''):'',
+      campaign:col.campaign>=0?String(r[col.campaign]||''):'',
+      ad:col.ad>=0?String(r[col.ad]||''):'',
+      platform:String(col.platform>=0?(r[col.platform]||''):'').toLowerCase()});
   }
 }
 
-// ── WRITE ──────────────────────────────────────────────────────────────────
 function leadToRow(l){
   const col=state.colMap;if(!col)return[l.date,l.name,l.phone,l.status,l.notes,l.income,l.campaign,l.ad,l.platform];
   const maxCol=Math.max(...Object.values(col).filter(v=>v>=0));
   const row=new Array(maxCol+1).fill('');
-  row[col.date]=l.date;row[col.name]=l.name;row[col.phone]=l.phone;row[col.status]=l.status;row[col.notes]=l.notes;
-  if(col.income>=0)row[col.income]=l.income;if(col.campaign>=0)row[col.campaign]=l.campaign;
-  if(col.ad>=0)row[col.ad]=l.ad;if(col.platform>=0)row[col.platform]=l.platform;
+  row[col.date]=l.date;row[col.name]=l.name;row[col.phone]=l.phone;
+  row[col.status]=l.status;row[col.notes]=l.notes;
+  if(col.income>=0)row[col.income]=l.income;
+  if(col.campaign>=0)row[col.campaign]=l.campaign;
+  if(col.ad>=0)row[col.ad]=l.ad;
+  if(col.platform>=0)row[col.platform]=l.platform;
   return row;
 }
 async function scriptPost(payload){
@@ -260,7 +244,6 @@ async function appendToSheet(lead){await scriptPost({action:'append',row:leadToR
 async function updateRowInSheet(lead){if(!lead.rowIndex){await appendToSheet(lead);return;}await scriptPost({action:'update',rowIndex:lead.rowIndex,row:leadToRow(lead)});}
 async function deleteRowInSheet(lead){if(!lead.rowIndex)return;await scriptPost({action:'clear',rowIndex:lead.rowIndex});}
 
-// ── AUTO SYNC ──────────────────────────────────────────────────────────────
 let autoSyncInterval=null;
 function startAutoSync(){
   if(autoSyncInterval)clearInterval(autoSyncInterval);
@@ -274,7 +257,6 @@ function startAutoSync(){
 }
 function setSyncStatus(msg,type){const el=document.getElementById('sync-status');if(el){el.textContent=msg;el.className='sync-status '+(type||'');}}
 
-// ── TABS ───────────────────────────────────────────────────────────────────
 function switchTab(tab,btn){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
   document.getElementById('view-leads').style.display=tab==='leads'?'flex':'none';
@@ -283,13 +265,14 @@ function switchTab(tab,btn){
   if(tab==='analytics'){renderFinance();renderAnalytics();}
 }
 
-// ── MONTH FILTER ───────────────────────────────────────────────────────────
 function buildMonthFilter(){
   const months=new Set();
   state.leads.forEach(l=>{const p=(l.date||'').split('/');if(p.length===3)months.add(p[2]+'-'+p[1].padStart(2,'0'));});
   const sorted=[...months].sort().reverse();
   const sel=document.getElementById('month-filter');
-  sel.innerHTML='<option value="all">כל הזמן</option>'+sorted.map(m=>{const[y,mo]=m.split('-');return `<option value="${m}">${HEB_MONTHS[parseInt(mo)-1]+' '+y}</option>`;}).join('');
+  sel.innerHTML='<option value="all">כל הזמן</option>'+sorted.map(m=>{
+    const[y,mo]=m.split('-');return `<option value="${m}">${HEB_MONTHS[parseInt(mo)-1]+' '+y}</option>`;
+  }).join('');
   sel.value=selectedMonth;
 }
 function onMonthFilterChange(){
@@ -303,24 +286,23 @@ function getFilteredByMonth(leads){
   return leads.filter(l=>{const p=(l.date||'').split('/');return p.length===3&&p[2]===y&&p[1].padStart(2,'0')===mo;});
 }
 
-// ── BUDGET (per client per month) ──────────────────────────────────────────
 function updateBudgetInput(){
   const inp=document.getElementById('budget');if(!inp)return;
   inp.value=getCurrentBudget()||'';
   const key=getBudgetKey();
-  const label=key==='all'?'תקציב כולל (₪)':'תקציב '+(key==='all'?'':HEB_MONTHS[parseInt(key.split('-')[1])-1]+' '+key.split('-')[0])+' (₪)';
-  const lel=document.querySelector('.fin-field label');if(lel)lel.firstChild.textContent=label;
+  let label='תקציב קמפיין (₪)';
+  if(key!=='all'){const[y,mo]=key.split('-');label='תקציב '+HEB_MONTHS[parseInt(mo)-1]+' '+y+' (₪)';}
+  const lel=document.querySelector('.fin-field label');
+  if(lel)lel.textContent=label;
 }
-
 async function onBudgetChange(){
   const val=parseFloat(document.getElementById('budget').value)||0;
   const key=getBudgetKey();
   state.budgets[key]=val;
-  try{await saveBudget(state.clientId,key,val);}catch{}
   renderFinance();renderAnalytics();
+  try{await saveBudget(state.clientId,key,val);}catch{}
 }
 
-// ── SIDEBAR ────────────────────────────────────────────────────────────────
 function renderSidebar(){
   const l=getFilteredByMonth(state.leads);
   const total=l.length,nw=l.filter(x=>x.status==='ליד חדש').length,
@@ -334,11 +316,9 @@ function renderSidebar(){
     <div class="s-stat"><span class="s-stat-label">נרשם</span><span class="s-stat-val green">${reg}</span></div>`;
 }
 
-// ── FINANCE ────────────────────────────────────────────────────────────────
 function renderFinance(){
   const l=getFilteredByMonth(state.leads);
-  const budget=getCurrentBudget();
-  const avgM=state.avgMonths||1;
+  const budget=getCurrentBudget();const avgM=state.avgMonths||1;
   const total=l.length,reg=l.filter(x=>x.status==='נרשם').length;
   const costPerLead=total>0&&budget>0?Math.round(budget/total):0;
   const totalInc=l.filter(x=>x.income&&x.status==='נרשם').reduce((s,x)=>s+(parseFloat(x.income)||0),0);
@@ -355,11 +335,9 @@ function renderFinance(){
     <div class="fin-row"><span class="fin-label">ROAS</span><span class="fin-val">${roas}</span></div>`;
 }
 
-// ── ANALYTICS ─────────────────────────────────────────────────────────────
 function renderAnalytics(){
   const l=getFilteredByMonth(state.leads);
-  const budget=getCurrentBudget();
-  const avgM=state.avgMonths||1;
+  const budget=getCurrentBudget();const avgM=state.avgMonths||1;
   const total=l.length,reg=l.filter(x=>x.status==='נרשם').length;
   const conv=total>0?Math.round((reg/total)*100):0;
   const totalInc=l.filter(x=>x.income&&x.status==='נרשם').reduce((s,x)=>s+(parseFloat(x.income)||0),0);
@@ -385,7 +363,6 @@ function renderAnalytics(){
 }
 function kpiCard(label,val,sub,color){return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-val" style="color:${color}">${val}</div>${sub?`<div class="kpi-sub">${sub}</div>`:''}</div>`;}
 
-// ── TABLE ──────────────────────────────────────────────────────────────────
 function getFiltered(){
   const q=(document.getElementById('search')?.value||'').toLowerCase();
   const st=document.getElementById('filter-status')?.value||'';
@@ -395,10 +372,9 @@ function getFiltered(){
     if(st&&l.status!==st)return false;if(pl&&l.platform!==pl)return false;return true;
   }).sort((a,b)=>{
     let av=a[state.sortField]||'',bv=b[state.sortField]||'';
-    // Convert DD/MM/YYYY to YYYYMMDD for correct date sorting
     if(state.sortField==='date'){
-      const toNum=s=>{const p=s.split('/');return p.length===3?p[2]+p[1]+p[0]:s;};
-      av=toNum(av);bv=toNum(bv);
+      const toYMD=s=>{const p=s.split('/');return p.length===3?p[2]+p[1]+p[0]:s;};
+      av=toYMD(av);bv=toYMD(bv);
     }
     return av>bv?state.sortDir:av<bv?-state.sortDir:0;
   });
@@ -436,7 +412,6 @@ function renderTable(){
 }
 function sortBy(f){if(state.sortField===f)state.sortDir*=-1;else{state.sortField=f;state.sortDir=1;}renderTable();}
 
-// ── INLINE EDIT ────────────────────────────────────────────────────────────
 const STATUSES=['ליד חדש','ביקש פרטים נוספים בוואטסאפ','פולואפ','לא רלוונטי','נרשם','לא נרשם'];
 function openInlineEdit(id){
   const l=state.leads.find(x=>x.id===id);if(!l)return;
@@ -457,7 +432,6 @@ function openInlineEdit(id){
 function iePickStatus(btn){document.querySelectorAll('#ie-status-pills .pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');}
 function ieGetStatus(){const a=document.querySelector('#ie-status-pills .pill.active');return a?a.dataset.val:'ליד חדש';}
 function closeInlineEdit(){document.getElementById('inline-edit-modal').classList.remove('open');}
-
 async function saveInlineEdit(){
   const l=state.leads.find(x=>x.id===state.editingId);if(!l)return;
   const updated={...l,
@@ -467,22 +441,18 @@ async function saveInlineEdit(){
     notes:document.getElementById('ie-notes').value.trim(),
     income:document.getElementById('ie-income').value.trim()
   };
-  // Optimistic update — close immediately and update UI
   state.leads=state.leads.map(x=>x.id===state.editingId?updated:x);
   closeInlineEdit();renderTable();renderSidebar();
-  showToast('שמור...','');setSyncStatus('שומר...','saving');
-  // Sync to sheet in background
+  showToast('שומר...','');setSyncStatus('שומר...','saving');
   updateRowInSheet(updated).then(()=>{
     showToast('ליד עודכן ✓','success');setSyncStatus('עודכן ✓','success');
-  }).catch(e=>{
-    showToast('שגיאה בשמירה — נסה שוב','error');setSyncStatus('שמירה נכשלה','error');
-    // Rollback
+  }).catch(()=>{
+    showToast('שגיאה בשמירה','error');setSyncStatus('שמירה נכשלה','error');
     state.leads=state.leads.map(x=>x.id===state.editingId?l:x);
     renderTable();renderSidebar();
   });
 }
 
-// ── ADD LEAD MODAL ─────────────────────────────────────────────────────────
 function openModal(){
   state.editingId=null;
   document.getElementById('modal-title').textContent='הוסף ליד חדש';
@@ -497,7 +467,6 @@ function handleOverlayClick(e){if(e.target===document.getElementById('modal-over
 function selectStatus(btn){document.querySelectorAll('#modal-overlay .pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');}
 function setStatusPill(val){document.querySelectorAll('#modal-overlay .pill').forEach(p=>p.classList.toggle('active',p.dataset.val===val));}
 function getSelectedStatus(){const a=document.querySelector('#modal-overlay .pill.active');return a?a.dataset.val:'ליד חדש';}
-
 async function saveLead(){
   const raw=document.getElementById('f-date').value;const dp=raw?raw.split('-'):[];
   const date=dp.length===3?`${dp[2]}/${dp[1]}/${dp[0]}`:raw;
@@ -507,12 +476,12 @@ async function saveLead(){
   const saveBtn=document.querySelector('#modal-overlay .btn-primary');saveBtn.innerHTML='<div class="spinner"></div>';saveBtn.disabled=true;
   setSyncStatus('שומר...','saving');
   try{
-    await appendToSheet(lead);await fetchFromSheet();buildMonthFilter();closeModal();renderTable();renderSidebar();
+    await appendToSheet(lead);await fetchFromSheet();buildMonthFilter();
+    closeModal();renderTable();renderSidebar();
     showToast('ליד נוסף ✓','success');setSyncStatus('עודכן ✓','success');
   }catch(e){showToast('שגיאה: '+e.message,'error');setSyncStatus('שמירה נכשלה','error');}
   finally{saveBtn.innerHTML='<span id="save-btn-text">שמור לגיליון</span>';saveBtn.disabled=false;}
 }
-
 async function deleteLead(id){
   const lead=state.leads.find(x=>x.id===id);if(!lead)return;
   if(!confirm(`למחוק את "${lead.name}"?`))return;
