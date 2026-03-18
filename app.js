@@ -376,7 +376,7 @@ function renderAnalytics(){
   const statuses=[{s:'ליד חדש',c:'#60a5fa'},{s:'ביקש פרטים נוספים בוואטסאפ',c:'#4ade80'},{s:'פולואפ',c:'#fbbf24'},{s:'לא רלוונטי',c:'#f87171'},{s:'נרשם',c:'#d4ff5c'},{s:'לא נרשם',c:'#9ca3af'}];
   document.getElementById('status-bars').innerHTML=statuses.map(({s,c})=>{
     const cnt=l.filter(x=>x.status===s).length;const pct=total>0?Math.round(cnt/total*100):0;
-    const label=s.length>22?s.slice(0,22)+'...':s;
+    const label=s==='ביקש פרטים נוספים בוואטסאפ'?'ביקש פרטים בווצאפ':s.length>20?s.slice(0,20)+'...':s;
     return `<div class="bar-row"><div class="bar-label-row"><span style="color:var(--text2)">${label}</span><span style="color:${c};font-weight:600">${cnt} (${pct}%)</span></div><div class="bar-track"><div class="bar-fill" style="background:${c};width:${pct}%"></div></div></div>`;
   }).join('');
   const adMap={};l.forEach(x=>{if(x.ad)adMap[x.ad]=(adMap[x.ad]||0)+1;});
@@ -403,8 +403,8 @@ function getFiltered(){
 function badgeClass(s){if(s==='ליד חדש')return 'badge-new';if(s==='ביקש פרטים נוספים בוואטסאפ')return 'badge-details';if(s==='פולואפ')return 'badge-followup';if(s==='נרשם')return 'badge-registered';if(s==='לא נרשם')return 'badge-notregistered';return 'badge-irrelevant';}
 function badgeLabel(s){if(s==='ביקש פרטים נוספים בוואטסאפ')return 'ביקש פרטים בווצאפ';return s;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function platformLabel(p){if(!p)return '—';const lp=String(p).toLowerCase();if(lp==='fb'||lp.includes('face'))return 'Facebook';if(lp==='ig'||lp.includes('insta'))return 'Instagram';return p;}
-function platformDot(p){const lp=String(p||'').toLowerCase();if(lp==='fb'||lp.includes('face'))return 'dot-fb';if(lp==='ig'||lp.includes('insta'))return 'dot-ig';return '';}
+function platformLabel(p){if(!p)return '—';const lp=String(p).toLowerCase();if(lp==='fb'||lp.includes('face'))return 'Facebook';if(lp==='ig'||lp.includes('insta'))return 'Instagram';if(lp==='manual')return 'Manual';return p;}
+function platformDot(p){const lp=String(p||'').toLowerCase();if(lp==='fb'||lp.includes('face'))return 'dot-fb';if(lp==='ig'||lp.includes('insta'))return 'dot-ig';if(lp==='manual')return 'dot-manual';return '';}
 
 function renderTable(){
   const rows=getFiltered();
@@ -510,7 +510,7 @@ function openModal(){
   document.getElementById('modal-title').textContent='הוסף ליד חדש';
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
   ['f-name','f-phone','f-notes','f-income','f-campaign','f-ad'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-platform').value='fb';setStatusPill('ליד חדש');
+  document.getElementById('f-platform').value='manual';setStatusPill('ליד חדש');
   document.getElementById('modal-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('f-name').focus(),100);
 }
