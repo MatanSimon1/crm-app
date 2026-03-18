@@ -166,9 +166,7 @@ async function loadClientCRM(client){
   state.clientName=client.name;state.clientId=String(client.id);state.avgMonths=client.avgMonths||5;
   hideAll();document.getElementById('crm-screen').classList.add('active');
   document.getElementById('s-client-name').textContent=client.name;
-  // Set client logo
-  const logoEl=document.getElementById('client-logo-img');
-  if(logoEl) logoEl.src=client.logoUrl||'logo.jpg';
+
   const isAdmin=JSON.parse(sessionStorage.getItem('crm_session')||'{}').role==='admin';
   document.getElementById('btn-back-admin').style.display=isAdmin?'flex':'none';
   setSyncStatus('טוען...','saving');
