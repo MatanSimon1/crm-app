@@ -183,22 +183,26 @@ function parseDate(raw){
   if(!raw) return '';
   const s=String(raw).trim();
   if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-  // For ISO timestamps like 2026-03-17T22:00:00.000Z, convert to local Israel time
-  const isoFull=s.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
-  if(isoFull){
+  // ISO timestamp e.g. 2026-03-17T22:00:00.000Z
+  // Israel is UTC+2 (UTC+3 during DST March-October)
+  if(s.includes('T')){
     const d=new Date(s);
-    // Add 2 hours for Israel time (UTC+2), or 3 during DST
-    const offset=2*3600*1000;
-    const local=new Date(d.getTime()+offset);
-    return `${String(local.getUTCDate()).padStart(2,'0')}/${String(local.getUTCMonth()+1).padStart(2,'0')}/${local.getUTCFullYear()}`;
+    if(!isNaN(d)){
+      // Use Israel locale to get correct local date
+      const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',day:'2-digit',month:'2-digit',year:'numeric'}).format(d);
+      // parts = "17/03/2026"
+      return parts;
+    }
   }
+  // Plain date e.g. 2026-03-17
   const isoM=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if(isoM) return `${isoM[3]}/${isoM[2]}/${isoM[1]}`;
+  // Serial number (Google Sheets)
   const n=parseFloat(s);
   if(!isNaN(n)&&n>1000){
-    // Add 12 hours to avoid timezone off-by-one (Israel UTC+2)
-    const d=new Date((n-25569)*86400*1000 + 12*3600*1000);
-    return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
+    const d=new Date((n-25569)*86400*1000+43200000);
+    const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',day:'2-digit',month:'2-digit',year:'numeric'}).format(d);
+    return parts;
   }
   return s;
 }
@@ -384,10 +388,9 @@ function kpiCard(label,val,sub,color){return `<div class="kpi-card"><div class="
 function getFiltered(){
   const q=(document.getElementById('search')?.value||'').toLowerCase();
   const st=document.getElementById('filter-status')?.value||'';
-  const pl=document.getElementById('filter-platform')?.value||'';
   return getFilteredByMonth(state.leads).filter(l=>{
     if(q&&!l.name.toLowerCase().includes(q)&&!l.phone.includes(q))return false;
-    if(st&&l.status!==st)return false;if(pl&&l.platform!==pl)return false;return true;
+    if(st&&l.status!==st)return false;return true;
   }).sort((a,b)=>{
     let av=a[state.sortField]||'',bv=b[state.sortField]||'';
     if(state.sortField==='date'){
@@ -446,9 +449,17 @@ function openInlineEdit(id){
   document.getElementById('ie-ad').textContent=l.ad||'—';
   document.getElementById('ie-status-pills').innerHTML=STATUSES.map(s=>
     `<button class="pill ${l.status===s?'active':''}" data-val="${s}" onclick="iePickStatus(this)">${s}</button>`).join('');
+  const incomeGroup=document.getElementById('ie-income-group');
+  if(incomeGroup) incomeGroup.style.display=l.status==='נרשם'?'block':'none';
   document.getElementById('inline-edit-modal').classList.add('open');
 }
-function iePickStatus(btn){document.querySelectorAll('#ie-status-pills .pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');}
+function iePickStatus(btn){
+  document.querySelectorAll('#ie-status-pills .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  // Show income field only when נרשם
+  const incomeGroup=document.getElementById('ie-income-group');
+  if(incomeGroup) incomeGroup.style.display=btn.dataset.val==='נרשם'?'block':'none';
+}
 function ieGetStatus(){const a=document.querySelector('#ie-status-pills .pill.active');return a?a.dataset.val:'ליד חדש';}
 function closeInlineEdit(){document.getElementById('inline-edit-modal').classList.remove('open');}
 async function saveInlineEdit(){
@@ -525,3 +536,13 @@ document.addEventListener('keydown',e=>{
     else if(document.getElementById('modal-overlay').classList.contains('open'))saveLead();
   }
 });
+
+function callLead(phone){
+  const clean=phone.replace(/[^0-9+]/g,'');
+  window.location.href='tel:'+clean;
+}
+function waLead(phone){
+  let clean=phone.replace(/[^0-9]/g,'');
+  if(clean.startsWith('0')) clean='972'+clean.slice(1);
+  window.open('https://wa.me/'+clean,'_blank');
+}
