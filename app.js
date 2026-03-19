@@ -1,6 +1,41 @@
+function renderPagination(page,total){
+  let el=document.getElementById('pagination-bar');
+  if(!el){
+    el=document.createElement('div');el.id='pagination-bar';
+    el.style.cssText='display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0';
+    const footer=document.querySelector('#view-leads .table-footer');
+    if(footer)footer.parentNode.insertBefore(el,footer);
+  }
+  if(total<=1){el.style.display='none';return;}
+  el.style.display='flex';
+  const pages=[];
+  if(total<=7){for(let i=1;i<=total;i++)pages.push(i);}
+  else{
+    pages.push(1);
+    if(page>3)pages.push('...');
+    for(let i=Math.max(2,page-1);i<=Math.min(total-1,page+1);i++)pages.push(i);
+    if(page<total-2)pages.push('...');
+    pages.push(total);
+  }
+  el.innerHTML=`
+    <button onclick="goPage(${page-1})" ${page<=1?'disabled':''} style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--text2);cursor:pointer;font-size:12px;${page<=1?'opacity:.4':''}">→</button>
+    ${pages.map(p=>p==='...'
+      ?`<span style="color:var(--text3);padding:0 2px">...</span>`
+      :`<button onclick="goPage(${p})" style="background:${p===page?'var(--accent)':'none'};color:${p===page?'var(--at)':'var(--text2)'};border:1px solid ${p===page?'var(--accent)':'var(--border)'};border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px;font-weight:${p===page?'700':'400'}">${p}</button>`
+    ).join('')}
+    <button onclick="goPage(${page+1})" ${page>=total?'disabled':''} style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--text2);cursor:pointer;font-size:12px;${page>=total?'opacity:.4':''}">←</button>`;
+}
+function goPage(p){
+  const total=Math.ceil(getFiltered().length/PAGE_SIZE)||1;
+  currentPage=Math.max(1,Math.min(p,total));
+  renderTable();
+  document.querySelector('.main-area')?.scrollTo(0,0);
+}
 function isAdminSession(){return JSON.parse(localStorage.getItem('crm_session')||'{}').role==='admin';}
 const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 let state={leads:[],spreadsheetId:'',sheetTab:'Main CRM',clientName:'',clientId:'',sortField:'date',sortDir:-1,editingId:null,nextId:1,avgMonths:5,colMap:null,budgets:{}};
+const PAGE_SIZE=50;
+let currentPage=1;
 let selectedMonth='all';
 
 async function fetchClients(){
@@ -172,8 +207,22 @@ async function loadClientCRM(client){
   setSyncStatus('טוען...','saving');
   try{
     await fetchFromSheet();
-    const budgets=await fetchBudgets(String(client.id));
-    state.budgets=budgets;
+    // Load budgets from localStorage first (instant)
+    const localBudgets={};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('budget_'+String(client.id)+'_')){
+        const month=k.replace('budget_'+String(client.id)+'_','');
+        localBudgets[month]=parseFloat(localStorage.getItem(k))||0;
+      }
+    }
+    state.budgets=localBudgets;
+    // Then fetch from server in background to sync
+    fetchBudgets(String(client.id)).then(b=>{
+      // Merge: server wins for months not in local
+      Object.keys(b).forEach(k=>{if(!localBudgets[k])state.budgets[k]=b[k];});
+      updateBudgetInput();
+    }).catch(()=>{});
     buildMonthFilter();renderTable();renderSidebar();updateBudgetInput();
     setSyncStatus('נטען ✓','success');startAutoSync();
   }catch(e){setSyncStatus('שגיאה: '+e.message,'error');showToast('שגיאה: '+e.message,'error');}
@@ -293,7 +342,7 @@ function buildMonthFilter(){
   }).join('');
   sel.value=selectedMonth;
 }
-function onMonthFilterChange(){
+function onMonthFilterChange(){currentPage=1;
   selectedMonth=document.getElementById('month-filter').value;
   updateBudgetInput();renderTable();renderSidebar();
   // Show budget only for specific month, not "all"
@@ -321,7 +370,11 @@ async function onBudgetChange(){
   const val=parseFloat(document.getElementById('budget').value)||0;
   const key=getBudgetKey();
   state.budgets[key]=val;
+  // Save to localStorage immediately (instant, no network needed)
+  const lsKey='budget_'+state.clientId+'_'+key;
+  localStorage.setItem(lsKey,val);
   renderFinance();renderAnalytics();
+  // Also sync to server in background
   try{await saveBudget(state.clientId,key,val);}catch{}
 }
 
@@ -407,10 +460,14 @@ function platformLabel(p){if(!p)return '—';const lp=String(p).toLowerCase();if
 function platformDot(p){const lp=String(p||'').toLowerCase();if(lp==='fb'||lp.includes('face'))return 'dot-fb';if(lp==='ig'||lp.includes('insta'))return 'dot-ig';if(lp==='manual')return 'dot-manual';return '';}
 
 function renderTable(){
-  const rows=getFiltered();
+  const allRows=getFiltered();
+  const totalPages=Math.ceil(allRows.length/PAGE_SIZE)||1;
+  if(currentPage>totalPages)currentPage=1;
+  const rows=allRows.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   const tbody=document.getElementById('table-body');const empty=document.getElementById('empty-state');const cards=document.getElementById('cards-body');
-  document.getElementById('row-count').textContent=rows.length+' מתוך '+getFilteredByMonth(state.leads).length+' לידים';
-  if(!rows.length){if(tbody)tbody.innerHTML='';if(empty)empty.style.display='flex';if(cards)cards.innerHTML='<div style="padding:3rem;text-align:center;color:var(--text3)">לא נמצאו לידים</div>';return;}
+  document.getElementById('row-count').textContent=allRows.length+' לידים'+(totalPages>1?' · עמוד '+currentPage+' מתוך '+totalPages:'');
+  renderPagination(currentPage,totalPages);
+  if(!allRows.length){if(tbody)tbody.innerHTML='';if(empty)empty.style.display='flex';if(cards)cards.innerHTML='<div style="padding:3rem;text-align:center;color:var(--text3)">לא נמצאו לידים</div>';return;}
   if(empty)empty.style.display='none';
   const isAdmin=isAdminSession();
   if(tbody)tbody.innerHTML=rows.map(l=>{
@@ -428,7 +485,7 @@ function renderTable(){
     <td><div class="tooltip-cell"><span class="cell-truncate">${esc(l.ad)||'—'}</span>${l.ad?`<div class="tooltip-box">${esc(l.ad)}</div>`:''}</div></td>
     <td class="action-cell">
       <button class="btn-call" onclick="event.stopPropagation();callLead('${l.phone}')" title="התקשר">📞</button>
-      <button class="btn-wa" onclick="event.stopPropagation();waLead('${l.phone}')" title="ווצאפ">💬</button>
+      <button class="btn-wa" onclick="event.stopPropagation();waLead('${l.phone}')" title="WhatsApp"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.845L.057 23.5a.5.5 0 00.613.613l5.701-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.516-5.21-1.41l-.373-.217-3.865 1.001 1.023-3.771-.234-.386A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg></button>
       ${isAdmin?`<button class="btn-delete-row" onclick="event.stopPropagation();confirmDelete(${l.id})" title="מחק">✕</button>`:''}
     </td>
   </tr>`;}).join('');
@@ -442,7 +499,7 @@ function renderTable(){
     <div style="display:flex;gap:6px;margin-top:10px">
       <button class="lead-card-edit" style="flex:2" onclick="event.stopPropagation();openInlineEdit(${l.id})">ערוך ←</button>
       <button class="btn-call-card" onclick="event.stopPropagation();callLead('${l.phone}')" title="התקשר">📞</button>
-      <button class="btn-wa-card" onclick="event.stopPropagation();waLead('${l.phone}')" title="ווצאפ">💬</button>
+      <button class="btn-wa-card" onclick="event.stopPropagation();waLead('${l.phone}')" title="WhatsApp" style="color:#25D366"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.845L.057 23.5a.5.5 0 00.613.613l5.701-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.516-5.21-1.41l-.373-.217-3.865 1.001 1.023-3.771-.234-.386A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg></button>
     </div>
   </div>`;}).join('');
 }
@@ -575,3 +632,17 @@ function togglePassVis(){
   if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
   else{inp.type='password';btn.textContent='👁';}
 }
+
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  localStorage.setItem('crm_theme',isLight?'light':'dark');
+  const btn=document.getElementById('theme-toggle');
+  if(btn)btn.textContent=isLight?'🌙':'☀️';
+}
+function initTheme(){
+  const saved=localStorage.getItem('crm_theme');
+  if(saved==='light'){document.body.classList.add('light-mode');}
+  const btn=document.getElementById('theme-toggle');
+  if(btn)btn.textContent=document.body.classList.contains('light-mode')?'🌙':'☀️';
+}
+document.addEventListener('DOMContentLoaded',initTheme);
