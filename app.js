@@ -349,8 +349,7 @@ function buildMonthFilter(){
 function onMonthFilterChange(){currentPage=1;
   selectedMonth=document.getElementById('month-filter').value;
   updateBudgetInput();renderTable();renderSidebar();
-  // Show budget only for specific month, not "all"
-  // Keep fin-section visible always in analytics
+  const analyticsVisible=document.getElementById('view-analytics').style.display!=='none';
   if(analyticsVisible){renderFinance();renderAnalytics();}
 }
 function getFilteredByMonth(leads){
@@ -361,12 +360,30 @@ function getFilteredByMonth(leads){
 
 function updateBudgetInput(){
   const inp=document.getElementById('budget');if(!inp)return;
-  inp.value=getCurrentBudget()||'';
-  const key=getBudgetKey();
-  let label='תקציב קמפיין (₪)';
-  if(key!=='all'){const[y,mo]=key.split('-');label='תקציב '+HEB_MONTHS[parseInt(mo)-1]+' '+y+' (₪)';}
-  const lel=document.querySelector('.fin-field label');
-  if(lel)lel.textContent=label;
+  const finField=document.querySelector('.fin-field');
+  const totalDisplay=document.getElementById('budget-total-display');
+  if(selectedMonth==='all'){
+    // Hide input, show sum of all months
+    if(finField)finField.style.display='none';
+    if(!totalDisplay){
+      const d=document.createElement('div');d.id='budget-total-display';
+      d.style.cssText='font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--bg3);border-radius:var(--r)';
+      const finSection=document.getElementById('fin-section');
+      const finResults=document.getElementById('fin-results');
+      if(finSection&&finResults)finSection.insertBefore(d,finResults);
+    }
+    const totalBudget=Object.values(state.budgets).reduce((s,v)=>s+(parseFloat(v)||0),0);
+    const el=document.getElementById('budget-total-display');
+    if(el)el.textContent='סה"כ תקציב כל החודשים: ₪'+totalBudget.toLocaleString();
+  } else {
+    if(finField)finField.style.display='';
+    if(totalDisplay)totalDisplay.style.display='none';
+    inp.value=getCurrentBudget()||'';
+    const key=getBudgetKey();
+    const[y,mo]=key.split('-');
+    const lel=document.querySelector('.fin-field label');
+    if(lel)lel.textContent='תקציב '+HEB_MONTHS[parseInt(mo)-1]+' '+y+' (₪)';
+  }
 }
 async function onBudgetChange(){
   const val=parseFloat(document.getElementById('budget').value)||0;
