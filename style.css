@@ -330,3 +330,21 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
   .s-stats{display:none!important}
   .fin-section{display:none!important}
 }
+
+/* ── LIGHT MODE ─────────────────────────────────────────────────────────── */
+body.light-mode{
+  --bg:#f4f4f6;--bg2:#ffffff;--bg3:#ebebed;--bg4:#dededf;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--border3:rgba(0,0,0,0.2);
+  --text:#111113;--text2:#44444f;--text3:#888898;
+  --accent:#5c8a00;--accent-dim:rgba(92,138,0,0.1);--at:#ffffff;
+  --green:#1a8a50;--amber:#b07000;--red:#cc3333;--blue:#1a5faa;
+}
+body.light-mode input,body.light-mode select,body.light-mode textarea{color:var(--text)}
+body.light-mode tr:hover td{background:rgba(0,0,0,0.025)}
+body.light-mode .badge-new{background:rgba(26,95,170,.12);color:#1a5faa}
+body.light-mode .badge-details{background:rgba(26,138,80,.1);color:#1a6640}
+body.light-mode .badge-followup{background:rgba(176,112,0,.1);color:#885500}
+body.light-mode .badge-irrelevant{background:rgba(204,51,51,.1);color:#aa2222}
+body.light-mode .badge-registered{background:rgba(92,138,0,.12);color:#3a6600}
+body.light-mode .badge-notregistered{background:rgba(100,100,120,.1);color:#555566}
+body.light-mode .modal{box-shadow:0 8px 40px rgba(0,0,0,.15)}
