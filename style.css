@@ -68,7 +68,7 @@ input::placeholder{color:var(--text3)}
 
 /* CRM LAYOUT */
 #crm-screen{flex-direction:row;height:100vh}
-.sidebar{width:var(--sw);min-width:var(--sw);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:.9rem;overflow-y:auto}
+.sidebar{width:var(--sw);min-width:var(--sw);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:.9rem;overflow-y:auto;overflow-x:hidden}
 .btn-back{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--text3);font-size:13px;transition:all .15s}
 .btn-back:hover{border-color:var(--border2);color:var(--text)}
 
@@ -263,7 +263,7 @@ tr:hover .btn-delete-row{color:var(--text3)}
 .btn-call,.btn-wa{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:13px;cursor:pointer;transition:all .15s;opacity:0}
 tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 .btn-call:hover{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3)}
-.btn-wa:hover{background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.3)}
+.btn-wa{color:#25D366!important}.btn-wa:hover{background:rgba(37,211,102,.15);border-color:rgba(37,211,102,.4)}
 
 /* Call / WhatsApp buttons on mobile cards */
 .btn-call-card,.btn-wa-card{background:none;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:14px;cursor:pointer;transition:all .15s;flex-shrink:0}
@@ -282,7 +282,7 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 .btn-call,.btn-wa{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:13px;cursor:pointer;transition:all .2s;opacity:0}
 tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 .btn-call:hover{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.35)}
-.btn-wa:hover{background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.3)}
+.btn-wa{color:#25D366!important}.btn-wa:hover{background:rgba(37,211,102,.15);border-color:rgba(37,211,102,.4)}
 .btn-call-card,.btn-wa-card{background:none;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:15px;cursor:pointer;transition:all .15s;flex-shrink:0}
 .btn-call-card:hover{background:rgba(74,222,128,.12)}
 .btn-wa-card:hover{background:rgba(37,211,102,.1)}
@@ -333,18 +333,46 @@ tr:hover .btn-call,tr:hover .btn-wa{opacity:1}
 
 /* ── LIGHT MODE ─────────────────────────────────────────────────────────── */
 body.light-mode{
-  --bg:#f4f4f6;--bg2:#ffffff;--bg3:#ebebed;--bg4:#dededf;
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--border3:rgba(0,0,0,0.2);
-  --text:#111113;--text2:#44444f;--text3:#888898;
-  --accent:#5c8a00;--accent-dim:rgba(92,138,0,0.1);--at:#ffffff;
-  --green:#1a8a50;--amber:#b07000;--red:#cc3333;--blue:#1a5faa;
+  --bg:#eef0f4;--bg2:#ffffff;--bg3:#f2f3f6;--bg4:#e5e7ec;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.16);--border3:rgba(0,0,0,0.24);
+  --text:#0d0d14;--text2:#2a2a3a;--text3:#666680;
+  --accent:#3d6e00;--accent-dim:rgba(61,110,0,0.1);--at:#ffffff;
+  --green:#0d7a40;--amber:#8a5800;--red:#b52020;--blue:#1044aa;
 }
-body.light-mode input,body.light-mode select,body.light-mode textarea{color:var(--text)}
-body.light-mode tr:hover td{background:rgba(0,0,0,0.025)}
-body.light-mode .badge-new{background:rgba(26,95,170,.12);color:#1a5faa}
-body.light-mode .badge-details{background:rgba(26,138,80,.1);color:#1a6640}
-body.light-mode .badge-followup{background:rgba(176,112,0,.1);color:#885500}
-body.light-mode .badge-irrelevant{background:rgba(204,51,51,.1);color:#aa2222}
-body.light-mode .badge-registered{background:rgba(92,138,0,.12);color:#3a6600}
-body.light-mode .badge-notregistered{background:rgba(100,100,120,.1);color:#555566}
-body.light-mode .modal{box-shadow:0 8px 40px rgba(0,0,0,.15)}
+body.light-mode input,body.light-mode select,body.light-mode textarea{
+  color:var(--text);background:#fff;border-color:rgba(0,0,0,0.18)
+}
+body.light-mode input::placeholder{color:#999}
+body.light-mode tr:hover td{background:rgba(0,0,0,0.03)}
+body.light-mode thead tr{background:#f0f1f5}
+body.light-mode th{color:#444}
+body.light-mode td{color:var(--text2)}
+body.light-mode .name-cell{color:var(--text);font-weight:600}
+body.light-mode .date-cell{color:#555}
+body.light-mode .phone-cell{color:#333}
+body.light-mode .s-stat-label{color:#333}
+body.light-mode .fin-label{color:#333}
+body.light-mode .kpi-label{color:#555}
+body.light-mode .analytics-card-title{color:#444}
+body.light-mode .bar-label-row span:first-child{color:#333!important}
+body.light-mode .badge-new{background:rgba(16,68,170,.1);color:#1044aa;border:1px solid rgba(16,68,170,.2)}
+body.light-mode .badge-details{background:rgba(13,122,64,.1);color:#0d5a30;border:1px solid rgba(13,122,64,.2)}
+body.light-mode .badge-followup{background:rgba(138,88,0,.1);color:#6a4000;border:1px solid rgba(138,88,0,.2)}
+body.light-mode .badge-irrelevant{background:rgba(181,32,32,.1);color:#901818;border:1px solid rgba(181,32,32,.2)}
+body.light-mode .badge-registered{background:rgba(61,110,0,.1);color:#2d5500;border:1px solid rgba(61,110,0,.2)}
+body.light-mode .badge-notregistered{background:rgba(80,80,100,.1);color:#404055;border:1px solid rgba(80,80,100,.15)}
+body.light-mode .modal{box-shadow:0 8px 40px rgba(0,0,0,.18)}
+body.light-mode .sidebar{border-left:1px solid rgba(0,0,0,0.12)}
+body.light-mode .s-stat{border-bottom-color:rgba(0,0,0,0.08)}
+body.light-mode .nav-tab.active{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+body.light-mode .client-name-big{color:var(--text)}
+body.light-mode .btn-add{background:#3d6e00;color:#fff}
+body.light-mode .login-card{box-shadow:0 4px 24px rgba(0,0,0,.1)}
+body.light-mode .btn-wa{color:#1a7a3a!important}
+body.light-mode .cell-truncate{color:#444}
+body.light-mode .tooltip-box{background:#fff;border-color:rgba(0,0,0,.15);color:#222}
+body.light-mode .page-footer{color:#666}
+body.light-mode .page-footer strong{color:#333}
+body.light-mode .admin-page-title{color:var(--text)}
+body.light-mode .client-row-name{color:var(--text)}
+body.light-mode .kpi-val{color:inherit}
