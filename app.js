@@ -327,7 +327,11 @@ function setSyncStatus(msg,type){const el=document.getElementById('sync-status')
 function switchTab(tab,btn){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
   document.getElementById('view-leads').style.display=tab==='leads'?'flex':'none';
-  document.getElementById('view-analytics').style.display=tab==='analytics'?'block':'none';
+  const va=document.getElementById('view-analytics');
+  va.style.display=tab==='analytics'?'block':'none';
+  va.style.flex=tab==='analytics'?'1':'';
+  va.style.overflow=tab==='analytics'?'auto':'';
+  va.style.padding=tab==='analytics'?'1.1rem':'';
   document.getElementById('fin-section').style.display=tab==='analytics'?'block':'none';
   if(tab==='analytics'){renderFinance();renderAnalytics();}
 }
@@ -389,9 +393,14 @@ function renderSidebar(){
     <div class="s-stat"><span class="s-stat-label">נרשם</span><span class="s-stat-val green">${reg}</span></div>`;
 }
 
+function getTotalBudget(){
+  if(selectedMonth!=='all') return getCurrentBudget();
+  return Object.values(state.budgets).reduce((s,v)=>s+(parseFloat(v)||0),0);
+}
+
 function renderFinance(){
   const l=getFilteredByMonth(state.leads);
-  const budget=getCurrentBudget();const avgM=state.avgMonths||1;
+  const budget=getTotalBudget();const avgM=state.avgMonths||1;
   const total=l.length,reg=l.filter(x=>x.status==='נרשם').length;
   const costPerLead=total>0&&budget>0?Math.round(budget/total):0;
   const totalInc=l.filter(x=>x.income&&x.status==='נרשם').reduce((s,x)=>s+(parseFloat(x.income)||0),0);
