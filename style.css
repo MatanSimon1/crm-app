@@ -621,3 +621,13 @@ body.light-mode .toast.error{border-color:rgba(192,39,45,.3);color:#c0272d}
 body.light-mode .sync-status.success{color:#0d7a45}
 body.light-mode .sync-status.error{color:#c0272d}
 body.light-mode .sync-status.saving{color:#92600a}
+
+/* ── MOBILE PAGINATION FIX ── */
+@media(max-width:680px){
+  .cards-wrap{overflow-y:visible!important;flex:none!important}
+  #view-leads{overflow:visible!important}
+  .main-area{overflow:visible!important}
+  #crm-screen{overflow-y:auto!important;height:100vh}
+  #pagination-bar{display:flex!important}
+  #pagination-bar button{padding:7px 12px!important;font-size:13px!important;min-width:36px}
+}
