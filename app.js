@@ -427,7 +427,7 @@ function renderFinance(){
   const avgMonthlyInc=reg>0?Math.round(totalInc/reg):0;
   const ltv=Math.round(avgMonthlyInc*avgM);
   const totalRev=reg*ltv;
-  const roas=budget>0?Math.round((totalRev/budget)*100)+'%':'—';
+  const roas=budget>0?Math.round(((totalRev-budget)/budget)*100)+'%':'—';
   const el=document.getElementById('fin-results');if(!el)return;
   el.innerHTML=`
     <div class="fin-row"><span class="fin-label">עלות לליד</span><span class="fin-val">₪${costPerLead.toLocaleString()}</span></div>
@@ -444,7 +444,7 @@ function renderAnalytics(){
   const conv=total>0?Math.round((reg/total)*100):0;
   const totalInc=l.filter(x=>x.income&&x.status==='נרשם').reduce((s,x)=>s+(parseFloat(x.income)||0),0);
   const avgInc=reg>0?Math.round(totalInc/reg):0;const ltv=Math.round(avgInc*avgM);
-  const roas=budget>0?Math.round((reg*ltv/budget)*100)+'%':'—';
+  const roas=budget>0?Math.round(((reg*ltv-budget)/budget)*100)+'%':'—';
   const costPerLead=total>0&&budget>0?Math.round(budget/total):0;
   document.getElementById('kpi-row').innerHTML=`
     ${kpiCard('סה"כ לידים',total,'','var(--blue)')}
@@ -521,20 +521,20 @@ function renderTable(){
     const wa_svg='<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.845L.057 23.5a.5.5 0 00.613.613l5.701-1.476A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.516-5.21-1.41l-.373-.217-3.865 1.001 1.023-3.771-.234-.386A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>';
     return `<div class="lead-card${isReg?' lead-card-reg':''}" onclick="openInlineEdit(${l.id})" style="padding:8px 10px;margin-bottom:6px">
     <div style="display:flex;align-items:center;gap:6px;width:100%;direction:rtl">
-      <span class="lead-card-name" style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${esc(l.name)}</span>
-      <span style="flex:1;display:flex;justify-content:center"><span class="badge ${badgeClass(l.status)}" style="font-size:10px;padding:2px 6px">${esc(badgeLabel(l.status))}</span></span>
-      <span style="font-size:11px;color:var(--text3);flex:1;text-align:left">${l.date||'—'}</span>
+      <span class="lead-card-name" style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%">${esc(l.name)}</span>
+      <span class="badge ${badgeClass(l.status)}" style="font-size:10px;padding:2px 6px;flex-shrink:0">${esc(badgeLabel(l.status))}</span>
+      <span style="font-size:11px;color:var(--text3);margin-right:auto;white-space:nowrap">${l.date||'—'}</span>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-      <span style="font-size:12px;color:var(--text2)">${l.phone}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;direction:rtl">
+      <span style="font-size:12px;color:var(--text2);direction:ltr">${l.phone}</span>
       <div style="display:flex;gap:4px">
         <button class="btn-call-card" onclick="event.stopPropagation();callLead('${l.phone}')" style="padding:4px 8px;font-size:13px">📞</button>
         <button class="btn-wa-card" onclick="event.stopPropagation();waLead('${l.phone}')" title="WhatsApp" style="color:#25D366;padding:4px 8px">${wa_svg}</button>
         <button class="lead-card-edit" onclick="event.stopPropagation();openInlineEdit(${l.id})" style="padding:4px 8px;font-size:11px">ערוך ←</button>
       </div>
     </div>
-    ${isReg&&l.income?'<div style="font-size:11px;color:var(--green);margin-top:3px">₪'+esc(l.income)+'</div>':''}
-    ${l.notes?'<div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(l.notes)+'</div>':''}
+    ${isReg&&l.income?'<div style="font-size:11px;color:var(--green);margin-top:3px;text-align:right">₪'+esc(l.income)+'</div>':''}
+    ${l.notes?'<div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right">'+esc(l.notes)+'</div>':''}
   </div>`;}).join('');
 }
 function sortBy(f){if(state.sortField===f)state.sortDir*=-1;else{state.sortField=f;state.sortDir=1;}renderTable();}
