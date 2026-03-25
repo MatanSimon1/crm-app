@@ -109,42 +109,48 @@
 <!-- CRM -->
 <div id="crm-screen" class="screen">
   <div class="sidebar">
-      <!-- Sidebar top: logo + controls -->
-      <div class="sidebar-top">
-        <div class="logo-wrap">
-          <img src="logo.jpg" alt="" class="crm-logo-img"/>
-          <span class="brand-txt">MetricMinds</span>
-        </div>
+      <!-- Row 1: logo | client name (center) | back + theme + logout -->
+      <div class="sidebar-top" style="display:flex;align-items:center;gap:6px;margin-bottom:.6rem">
+        <img src="logo.jpg" alt="" class="crm-logo-img"/>
+        <div class="sb-client-name" id="s-client-name" style="flex:1;text-align:center;font-size:15px;font-weight:700;color:var(--text)">—</div>
         <div style="display:flex;gap:4px">
           <button class="btn-back" id="btn-back-admin" onclick="goBackAdmin()" style="display:none" title="חזור">←</button>
-          <button id="theme-toggle" onclick="toggleTheme()" class="btn-logout-small" title="שינוי מצב תצוגה" style="font-size:14px">☀️</button>
-        <button class="btn-logout-small" onclick="doLogout()" title="התנתק">⏻</button>
+          <button id="theme-toggle" onclick="toggleTheme()" class="btn-logout-small" title="מצב תצוגה" style="font-size:14px">☀️</button>
+          <button class="btn-logout-small" onclick="doLogout()" title="התנתק">⏻</button>
         </div>
       </div>
-      <!-- 1. Client name -->
-      <div class="sb-client-block">
-        <div class="sb-client-label">לקוח</div>
-        <div class="sb-client-name" id="s-client-name">—</div>
-      </div>
 
-      <!-- 2. Nav tabs -->
-      <div class="nav-tabs">
+      <!-- Row 2: tabs -->
+      <div class="nav-tabs" style="margin-bottom:.5rem">
         <button class="nav-tab active" onclick="switchTab('leads',this)">לידים</button>
         <button class="nav-tab" onclick="switchTab('analytics',this)">סטטיסטיקה</button>
       </div>
 
-      <!-- 3. Period filter -->
-      <div class="sb-period-block">
-        <div class="sb-section-label">תקופה</div>
+      <!-- Row 3: period (desktop full width) + on mobile: search+status+add too -->
+      <div class="sidebar-controls-row">
         <select id="month-filter" onchange="onMonthFilterChange()" class="month-select">
           <option value="all">כל הזמן</option>
         </select>
+        <div class="search-wrap mobile-only" style="flex:1;min-width:0">
+          <svg class="search-icon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-mobile" placeholder="חיפוש..." oninput="currentPage=1;syncSearch(this.value);renderTable()" style="width:100%"/>
+        </div>
+        <select id="filter-status-mobile" class="mobile-only" onchange="currentPage=1;syncStatus(this.value);renderTable()">
+          <option value="">סטטוס</option>
+          <option>ליד חדש</option>
+          <option>ביקש פרטים נוספים בוואטסאפ</option>
+          <option>פולואפ</option>
+          <option>לא רלוונטי</option>
+          <option>נרשם</option>
+          <option>לא נרשם</option>
+        </select>
+        <button class="btn-add mobile-only" onclick="openModal()" style="padding:5px 8px;font-size:13px;font-weight:700;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
       </div>
 
-      <!-- 4. Stats -->
+      <!-- Stats -->
       <div class="s-stats" id="s-stats"></div>
 
-      <!-- 5. Finance -->
+      <!-- Finance -->
       <div class="fin-section" id="fin-section" style="display:none;">
         <div class="fin-title">פיננסים</div>
         <div class="fin-field">
@@ -158,7 +164,7 @@
     </div>
   <div class="main-area">
     <div id="view-leads">
-      <div class="top-bar">
+      <div class="top-bar desktop-only">
         <div class="filters-row">
           <div class="search-wrap">
             <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
