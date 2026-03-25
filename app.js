@@ -1,11 +1,6 @@
 function renderPagination(page,total){
-  let el=document.getElementById('pagination-bar');
-  if(!el){
-    el=document.createElement('div');el.id='pagination-bar';
-    el.style.cssText='display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0';
-    const footer=document.querySelector('#view-leads .table-footer');
-    if(footer)footer.parentNode.insertBefore(el,footer);
-  }
+  const el=document.getElementById('pagination-bar');
+  if(!el)return;
   if(total<=1){el.style.display='none';return;}
   el.style.display='flex';
   const pages=[];
@@ -29,7 +24,9 @@ function goPage(p){
   const total=Math.ceil(getFiltered().length/PAGE_SIZE)||1;
   currentPage=Math.max(1,Math.min(p,total));
   renderTable();
+  window.scrollTo(0,0);
   document.querySelector('.main-area')?.scrollTo(0,0);
+  document.querySelector('.cards-wrap')?.scrollTo(0,0);
 }
 function isAdminSession(){return JSON.parse(localStorage.getItem('crm_session')||'{}').role==='admin';}
 const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
@@ -333,7 +330,13 @@ function switchTab(tab,btn){
   va.style.overflow=tab==='analytics'?'auto':'';
   va.style.padding=tab==='analytics'?'1.1rem':'';
   document.getElementById('fin-section').style.display=tab==='analytics'?'block':'none';
-  if(tab==='analytics'){renderFinance();renderAnalytics();}
+  if(tab==='analytics'){
+    renderFinance();renderAnalytics();
+    fetchBudgets(state.clientId).then(b=>{
+      state.budgets={...state.budgets,...b};
+      updateBudgetInput();renderFinance();renderAnalytics();
+    }).catch(()=>{});
+  }
 }
 
 function buildMonthFilter(){
@@ -460,7 +463,7 @@ function renderAnalytics(){
   const ads=Object.entries(adMap).sort((a,b)=>b[1]-a[1]).slice(0,8);const maxAd=ads[0]?ads[0][1]:1;
   document.getElementById('ad-bars').innerHTML=ads.length?ads.map(([ad,cnt])=>`<div class="bar-row"><div class="bar-label-row"><span style="color:var(--text2)">${ad}</span><span style="color:var(--amber);font-weight:600">${cnt}</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--amber);width:${Math.round(cnt/maxAd*100)}%"></div></div></div>`).join(''):'<div style="color:var(--text3);font-size:12px">אין נתוני מודעות</div>';
 }
-function kpiCard(label,val,sub,color){return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-val" style="color:${color}">${val}</div>${sub?`<div class="kpi-sub">${sub}</div>`:''}</div>`;}
+function kpiCard(label,val,sub,color){return `<div class="kpi-card" style="border-top:3px solid ${color}"><div class="kpi-label">${label}</div><div class="kpi-val" style="color:${color}">${val}</div>${sub?`<div class="kpi-sub">${sub}</div>`:''}</div>`;}
 
 function getFiltered(){
   const q=(document.getElementById('search')?.value||'').toLowerCase();
