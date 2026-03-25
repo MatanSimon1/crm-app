@@ -108,7 +108,7 @@ input::placeholder{color:var(--text3)}
 #view-leads{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
 #view-analytics{overflow-y:auto;flex:1;min-height:0}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
-.filters-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;flex:1;min-width:0}
+.filters-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 .search-wrap{position:relative}
 .search-icon{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
 .search-wrap input{width:185px;padding-right:30px;padding-left:10px}
@@ -239,7 +239,7 @@ tr:hover .btn-delete-row{color:var(--text3)}
   .fin-section{display:none!important}
   .desktop-only{display:none!important}
   .mobile-only{display:block!important}
-  .search-wrap input{width:100%;min-width:0}
+  .search-wrap input{width:140px}
   .top-bar{padding:.6rem .8rem}
   .form-row{grid-template-columns:1fr}
 }
@@ -644,12 +644,12 @@ body.light-mode .sync-status.saving{color:#92600a}
 
 /* Compact top bar */
 @media(max-width:680px){
-  .top-bar{padding:5px 8px!important;flex-wrap:nowrap!important;gap:4px!important}
-  .filters-row{flex-wrap:nowrap;gap:4px;flex:1;min-width:0}
+  .top-bar{padding:5px 8px!important}
+  .filters-row{flex-wrap:nowrap;gap:4px}
   .search-wrap{flex:1;min-width:0}
-  .search-wrap input{font-size:12px;width:100%;min-width:0}
+  .search-wrap input{font-size:12px;width:100%}
   #filter-status{flex-shrink:0;font-size:11px;padding:6px 4px;max-width:90px}
-  .btn-add{flex-shrink:0;font-size:11px;padding:6px 8px;white-space:nowrap;gap:3px}
+  .btn-add{flex-shrink:0;font-size:12px;padding:6px 10px;white-space:nowrap}
 }
 
 /* Compact sidebar */
@@ -688,3 +688,23 @@ body.light-mode .sync-status.saving{color:#92600a}
 .btn-call-card,.btn-wa-card{background:none;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:15px;cursor:pointer;transition:all .15s;flex-shrink:0}
 .btn-call-card:hover{background:rgba(74,222,128,.12)}
 .btn-wa-card:hover{background:rgba(37,211,102,.1)}
+
+/* ── SIDEBAR CONTROLS ROW (Generic CRM) ── */
+.sidebar-controls-row{display:flex;align-items:center;gap:5px;margin-bottom:.5rem}
+.sidebar-controls-row .month-select{flex:1;width:100%}
+
+/* Desktop: hide mobile-only elements in sidebar */
+@media(min-width:681px){
+  .sidebar-controls-row .mobile-only{display:none!important}
+  .top-bar.desktop-only{display:flex!important}
+}
+
+/* Mobile: month-select compact, show mobile controls */
+@media(max-width:680px){
+  .top-bar.desktop-only{display:none!important}
+  .sidebar-controls-row .month-select{flex:0 0 75px;font-size:11px;padding:5px 4px}
+  .sidebar-controls-row .search-wrap{flex:1;min-width:0}
+  .sidebar-controls-row .search-wrap input{width:100%;font-size:12px}
+  .sidebar-controls-row #filter-status-mobile{flex:0 0 65px;font-size:11px;padding:5px 3px}
+  .sidebar-controls-row .btn-add{flex-shrink:0}
+}
