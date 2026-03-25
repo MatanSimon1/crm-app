@@ -631,3 +631,60 @@ body.light-mode .sync-status.saving{color:#92600a}
   #pagination-bar{display:flex!important}
   #pagination-bar button{padding:7px 12px!important;font-size:13px!important;min-width:36px}
 }
+
+/* ══════════════════════════════════════
+   MOBILE IMPROVEMENTS (from Chiquita)
+══════════════════════════════════════ */
+
+/* Compact lead cards */
+@media(max-width:680px){
+  .lead-card{padding:8px 10px!important;margin-bottom:5px!important}
+  .cards-wrap{padding:5px 6px}
+}
+
+/* Compact top bar */
+@media(max-width:680px){
+  .top-bar{padding:5px 8px!important}
+  .filters-row{flex-wrap:nowrap;gap:4px}
+  .search-wrap{flex:1;min-width:0}
+  .search-wrap input{font-size:12px;width:100%}
+  #filter-status{flex-shrink:0;font-size:11px;padding:6px 4px;max-width:90px}
+  .btn-add{flex-shrink:0;font-size:12px;padding:6px 10px;white-space:nowrap}
+}
+
+/* Compact sidebar */
+@media(max-width:680px){
+  .sidebar{padding:.5rem .75rem!important}
+  .sidebar-top{margin-bottom:.5rem}
+  .sb-client-block,.client-name-block{padding:.5rem .7rem!important;margin-bottom:.4rem!important}
+  .sb-client-name,.client-name-big{font-size:16px!important}
+  .nav-tabs{margin-bottom:.4rem!important}
+  .sb-period-block,.month-filter-wrap{margin-bottom:.4rem!important}
+  .month-select{padding:5px 7px!important;font-size:12px!important;width:100%}
+  .s-stats{display:none!important}
+  .fin-section{display:none!important}
+}
+
+/* KPI grid 2 columns on mobile */
+@media(max-width:680px){
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Pagination bigger on mobile */
+@media(max-width:680px){
+  #pagination-bar button{padding:7px 12px!important;font-size:13px!important;min-width:36px}
+}
+
+/* Mobile scroll fix for pagination */
+@media(max-width:680px){
+  .cards-wrap{overflow-y:visible!important;flex:none!important}
+  #view-leads{overflow:visible!important}
+  .main-area{overflow:visible!important}
+  #crm-screen{overflow-y:auto!important;height:100vh}
+  #pagination-bar{display:flex!important}
+}
+
+/* Action buttons */
+.btn-call-card,.btn-wa-card{background:none;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:15px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.btn-call-card:hover{background:rgba(74,222,128,.12)}
+.btn-wa-card:hover{background:rgba(37,211,102,.1)}
