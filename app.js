@@ -198,6 +198,7 @@ async function loadClientCRM(client){
   state.clientName=client.name;state.clientId=String(client.id);state.avgMonths=client.avgMonths||5;
   hideAll();document.getElementById('crm-screen').classList.add('active');
   document.getElementById('s-client-name').textContent=client.name;
+  const mn=document.getElementById('s-client-name-mobile');if(mn)mn.textContent=client.name;
 
   const isAdmin=JSON.parse(localStorage.getItem('crm_session')||'{}').role==='admin';
   document.getElementById('btn-back-admin').style.display=isAdmin?'flex':'none';
