@@ -708,3 +708,10 @@ body.light-mode .sync-status.saving{color:#92600a}
   .sidebar-controls-row #filter-status-mobile{flex:0 0 65px;font-size:11px;padding:5px 3px}
   .sidebar-controls-row .btn-add{flex-shrink:0}
 }
+
+/* Mobile: hide the separate client name block, show it in sidebar-top inline */
+@media(max-width:680px){
+  [style*="text-align:center;padding:.5rem 0 .6rem"]{display:none!important}
+  .sidebar-top .brand-txt{display:none!important}
+  .sidebar-top{margin-bottom:.4rem!important}
+}
