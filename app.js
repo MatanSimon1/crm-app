@@ -159,6 +159,7 @@ function openAddClient(){
   document.getElementById('client-modal-title').textContent='הוסף לקוח';
   document.getElementById('cm-id').value='';
   ['cm-name','cm-username','cm-password','cm-sheet-url','cm-logo-url'].forEach(id=>document.getElementById(id).value='');
+  loadBudgetsToModal({});
   document.getElementById('cm-sheet-tab').value='Main CRM';
   document.getElementById('cm-avg-months').value='5';
   document.getElementById('client-modal').classList.add('open');
@@ -175,6 +176,7 @@ function editClient(id){
   document.getElementById('cm-sheet-tab').value=c.sheetTab||'Main CRM';
   document.getElementById('cm-avg-months').value=c.avgMonths||5;
   document.getElementById('cm-logo-url').value=c.logoUrl||'';
+  loadBudgetsToModal(c.budgets||{});
   document.getElementById('client-modal').classList.add('open');
 }
 async function saveClient(){
@@ -190,7 +192,8 @@ async function saveClient(){
   if(!sheetId){showAdminToast('קישור גיליון לא תקין','error');return;}
   const btn=document.querySelector('#client-modal .btn-primary');btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
   const logoUrl=document.getElementById('cm-logo-url').value.trim();
-  const client={id:id||Date.now().toString(),name,username,password,sheetUrl,sheetId,sheetTab,avgMonths,logoUrl,active:true};
+  const budgets=getBudgetsFromModal();
+  const client={id:id||Date.now().toString(),name,username,password,sheetUrl,sheetId,sheetTab,avgMonths,logoUrl,budgets,active:true};
   try{
     await pushSaveClient(client);
     document.getElementById('client-modal').classList.remove('open');
@@ -237,18 +240,9 @@ async function loadClientCRM(client){
         localBudgets[month]=parseFloat(localStorage.getItem(k))||0;
       }
     }
-    state.budgets=localBudgets;
-    // Server is source of truth - especially important on mobile where localStorage is empty
-    fetchBudgets(String(client.id)).then(b=>{
-      state.budgets={...localBudgets,...b};
-      Object.keys(b).forEach(k=>{
-        if(parseFloat(b[k])>0)localStorage.setItem('budget_'+client.id+'_'+k,b[k]);
-      });
-      updateBudgetInput();
-      if(document.getElementById('view-analytics')?.style.display!=='none'){
-        renderFinance();renderAnalytics();
-      }
-    }).catch(()=>{});
+    // Use budgets saved in client object (works on all devices)
+    state.budgets={...localBudgets,...(client.budgets||{})};
+    updateBudgetInput();
     buildMonthFilter();renderTable();renderSidebar();updateBudgetInput();
     setSyncStatus('נטען ✓','success');startAutoSync();
   }catch(e){setSyncStatus('שגיאה: '+e.message,'error');showToast('שגיאה: '+e.message,'error');}
@@ -362,14 +356,7 @@ function switchTab(tab,btn){
   if(tab==='analytics'){
     renderFinance();renderAnalytics();
     // Always fetch fresh budget from server (critical for mobile)
-    fetchBudgets(state.clientId).then(b=>{
-      state.budgets={...state.budgets,...b};
-      // Save to localStorage
-      Object.keys(b).forEach(k=>{
-        if(parseFloat(b[k])>0)localStorage.setItem('budget_'+state.clientId+'_'+k,b[k]);
-      });
-      updateBudgetInput();syncMobileBudget();renderFinance();renderAnalytics();
-    }).catch(()=>{});
+    // budgets already loaded from client object
   }
 }
 
@@ -748,4 +735,38 @@ function syncMobileBudget(){
       inp.style.display='';
     }
   }
+}
+
+function addBudgetRow(month='',amount=''){
+  const list=document.getElementById('cm-budgets-list');
+  if(!list)return;
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:6px;align-items:center';
+  row.innerHTML=`
+    <input type="month" value="${month}" placeholder="חודש" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px"/>
+    <input type="number" value="${amount}" placeholder="תקציב ₪" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px"/>
+    <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px">✕</button>`;
+  list.appendChild(row);
+}
+
+function getBudgetsFromModal(){
+  const list=document.getElementById('cm-budgets-list');
+  if(!list)return{};
+  const budgets={};
+  list.querySelectorAll('div').forEach(row=>{
+    const inputs=row.querySelectorAll('input');
+    if(inputs.length>=2){
+      const month=inputs[0].value.trim(); // format: "2026-03"
+      const amount=parseFloat(inputs[1].value)||0;
+      if(month&&amount>0)budgets[month]=amount;
+    }
+  });
+  return budgets;
+}
+
+function loadBudgetsToModal(budgets){
+  const list=document.getElementById('cm-budgets-list');
+  if(!list)return;
+  list.innerHTML='';
+  Object.entries(budgets||{}).forEach(([month,amount])=>addBudgetRow(month,amount));
 }
