@@ -51,13 +51,36 @@ async function pushDeleteClient(clientId){
 }
 async function fetchBudgets(clientId){
   try{
-    const res=await fetch(APPS_SCRIPT_URL+'?action=getBudgets&clientId='+encodeURIComponent(clientId));
+    // Read budgets from the client's own sheet, tab "_budgets"
+    const url=APPS_SCRIPT_URL+'?action=read&sheetId='+encodeURIComponent(state.spreadsheetId)+'&tab=_budgets';
+    const res=await fetch(url);
     const d=await res.json();
-    return d.budgets||{};
+    if(d.status!=='ok')return{};
+    const rows=d.values||[];
+    const budgets={};
+    rows.forEach(r=>{if(r[0]&&r[1])budgets[String(r[0])]=Number(r[1])||0;});
+    return budgets;
   }catch{return{};}
 }
 async function saveBudget(clientId,month,budget){
-  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveBudget',clientId,month,budget})});
+  // Save budget to the client's own sheet, tab "_budgets"
+  // First read existing rows to check if month exists
+  try{
+    const url=APPS_SCRIPT_URL+'?action=read&sheetId='+encodeURIComponent(state.spreadsheetId)+'&tab=_budgets';
+    const res=await fetch(url);
+    const d=await res.json();
+    const rows=(d.values||[]);
+    const rowIndex=rows.findIndex(r=>String(r[0])===String(month));
+    if(rowIndex>=0){
+      // Update existing row
+      await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'update',sheetId:state.spreadsheetId,sheetTab:'_budgets',rowIndex:rowIndex+1,row:[month,budget]})});
+    } else {
+      // Append new row
+      await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'append',sheetId:state.spreadsheetId,sheetTab:'_budgets',row:[month,budget]})});
+    }
+  }catch{}
 }
 function getBudgetKey(){return selectedMonth==='all'?'all':selectedMonth;}
 function getCurrentBudget(){return parseFloat(state.budgets[getBudgetKey()])||0;}
