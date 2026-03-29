@@ -215,11 +215,16 @@ async function loadClientCRM(client){
       }
     }
     state.budgets=localBudgets;
-    // Then fetch from server in background to sync
+    // Server is source of truth - especially important on mobile where localStorage is empty
     fetchBudgets(String(client.id)).then(b=>{
-      // Merge: server wins for months not in local
-      Object.keys(b).forEach(k=>{if(!localBudgets[k])state.budgets[k]=b[k];});
+      state.budgets={...localBudgets,...b};
+      Object.keys(b).forEach(k=>{
+        if(parseFloat(b[k])>0)localStorage.setItem('budget_'+client.id+'_'+k,b[k]);
+      });
       updateBudgetInput();
+      if(document.getElementById('view-analytics')?.style.display!=='none'){
+        renderFinance();renderAnalytics();
+      }
     }).catch(()=>{});
     buildMonthFilter();renderTable();renderSidebar();updateBudgetInput();
     setSyncStatus('נטען ✓','success');startAutoSync();
@@ -332,10 +337,10 @@ function switchTab(tab,btn){
   va.style.padding=tab==='analytics'?'1.1rem':'';
   document.getElementById('fin-section').style.display=tab==='analytics'?'block':'none';
   if(tab==='analytics'){
-    renderFinance();renderAnalytics();
+    syncMobileBudget();renderFinance();renderAnalytics();
     fetchBudgets(state.clientId).then(b=>{
       state.budgets={...state.budgets,...b};
-      updateBudgetInput();renderFinance();renderAnalytics();
+      updateBudgetInput();syncMobileBudget();renderFinance();renderAnalytics();
     }).catch(()=>{});
   }
 }
@@ -416,7 +421,13 @@ function renderSidebar(){
 
 function getTotalBudget(){
   if(selectedMonth!=='all') return getCurrentBudget();
-  return Object.values(state.budgets).reduce((s,v)=>s+(parseFloat(v)||0),0);
+  // Only sum budgets for months that actually have leads
+  const monthsWithLeads=new Set();
+  state.leads.forEach(l=>{
+    const p=(l.date||'').split('/');
+    if(p.length===3)monthsWithLeads.add(p[2]+'-'+p[1].padStart(2,'0'));
+  });
+  return [...monthsWithLeads].reduce((s,m)=>s+(parseFloat(state.budgets[m])||0),0);
 }
 
 function renderFinance(){
@@ -683,3 +694,30 @@ function initTheme(){
   if(btn)btn.textContent=document.body.classList.contains('light-mode')?'🌙':'☀️';
 }
 document.addEventListener('DOMContentLoaded',initTheme);
+
+// Mobile budget input sync
+function onMobileBudgetChange(){
+  const val=parseFloat(document.getElementById('budget-mobile')?.value)||0;
+  const inp=document.getElementById('budget');
+  if(inp)inp.value=val||'';
+  onBudgetChange();
+}
+
+// Sync mobile budget display when month changes or budgets load
+function syncMobileBudget(){
+  const inp=document.getElementById('budget-mobile');
+  if(!inp)return;
+  inp.value=getCurrentBudget()||'';
+  const lbl=document.getElementById('mobile-budget-label');
+  if(lbl){
+    const key=getBudgetKey();
+    if(key==='all'){
+      lbl.textContent='סה"כ תקציב: ₪'+getTotalBudget().toLocaleString();
+      inp.style.display='none';
+    } else {
+      const[y,mo]=key.split('-');
+      lbl.textContent='תקציב '+HEB_MONTHS[parseInt(mo)-1]+' '+y+' (₪)';
+      inp.style.display='';
+    }
+  }
+}
