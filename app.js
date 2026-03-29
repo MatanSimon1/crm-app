@@ -58,11 +58,8 @@ async function fetchBudgets(clientId){
 }
 async function saveBudget(clientId,month,budget){
   try{
-    await fetch(APPS_SCRIPT_URL,{
-      method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action:'saveBudget',clientId,month,budget})
-    });
+    // GET works reliably with Apps Script no-cors
+    await fetch(APPS_SCRIPT_URL+'?action=saveBudget&clientId='+encodeURIComponent(clientId)+'&month='+encodeURIComponent(month)+'&budget='+encodeURIComponent(budget));
   }catch{}
 }
 function getBudgetKey(){return selectedMonth==='all'?'all':selectedMonth;}
