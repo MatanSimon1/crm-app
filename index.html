@@ -164,7 +164,10 @@
         <div class="fin-title">פיננסים</div>
         <div class="fin-field">
           <label id="budget-label">תקציב קמפיין (₪)</label>
-          <input type="number" id="budget" value="0" oninput="onBudgetChange()"/>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="budget" placeholder="0" onkeydown="if(event.key==='Enter')saveBudgetClick()"/>
+            <button onclick="saveBudgetClick()" class="btn-save-budget" title="שמור תקציב">✓</button>
+          </div>
           <div class="fin-hint">לכל חודש בנפרד</div>
         </div>
         <div id="fin-results"></div>
