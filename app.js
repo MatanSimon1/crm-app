@@ -63,7 +63,16 @@ async function saveBudget(clientId,month,budget){
   }catch{}
 }
 function getBudgetKey(){return selectedMonth==='all'?'all':selectedMonth;}
-function getCurrentBudget(){return parseFloat(state.budgets[getBudgetKey()])||0;}
+function getCurrentBudget(){
+  const key=getBudgetKey();
+  if(key==='all')return 0;
+  // Try exact match first (2026-03)
+  if(state.budgets[key])return parseFloat(state.budgets[key])||0;
+  // Try matching any key that contains the year-month
+  const[y,mo]=key.split('-');
+  const match=Object.keys(state.budgets).find(k=>k.includes(y)&&k.includes(' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)-1]+' '));
+  return match?parseFloat(state.budgets[match])||0:0;
+}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 document.addEventListener('DOMContentLoaded',()=>{
