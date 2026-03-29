@@ -417,13 +417,23 @@ function updateBudgetInput(){
     const[y,mo]=key.split('-');
     const lel=document.querySelector('.fin-field label');
     if(lel)lel.textContent='תקציב '+HEB_MONTHS[parseInt(mo)-1]+' '+y+' (₪)';
+    // Reset save button state
+    const sb=document.getElementById('budget-save-btn');if(sb)sb.style.display='none';
+    const sl=document.getElementById('budget-saved-label');
+    if(sl)sl.style.display=getCurrentBudget()>0?'':'none';
   }
 }
+function showBudgetSaveBtn(){
+  document.getElementById('budget-save-btn').style.display='';
+  document.getElementById('budget-saved-label').style.display='none';
+}
 function saveBudgetClick(){
-  const btn=document.querySelector('.btn-save-budget');
+  const btn=document.getElementById('budget-save-btn');
+  const lbl=document.getElementById('budget-saved-label');
   if(btn){btn.textContent='...';btn.disabled=true;}
   onBudgetChange().then(()=>{
-    if(btn){btn.textContent='✓';btn.disabled=false;}
+    if(btn){btn.style.display='none';btn.textContent='✓';btn.disabled=false;}
+    if(lbl)lbl.style.display='';
     showToast('תקציב נשמר ✓','success');
   }).catch(()=>{
     if(btn){btn.textContent='✓';btn.disabled=false;}
