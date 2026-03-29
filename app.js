@@ -51,35 +51,18 @@ async function pushDeleteClient(clientId){
 }
 async function fetchBudgets(clientId){
   try{
-    // Read budgets from the client's own sheet, tab "_budgets"
-    const url=APPS_SCRIPT_URL+'?action=read&sheetId='+encodeURIComponent(state.spreadsheetId)+'&tab=_budgets';
-    const res=await fetch(url);
+    const res=await fetch(APPS_SCRIPT_URL+'?action=getBudgets&clientId='+encodeURIComponent(clientId));
     const d=await res.json();
-    if(d.status!=='ok')return{};
-    const rows=d.values||[];
-    const budgets={};
-    rows.forEach(r=>{if(r[0]&&r[1])budgets[String(r[0])]=Number(r[1])||0;});
-    return budgets;
+    return d.budgets||{};
   }catch{return{};}
 }
 async function saveBudget(clientId,month,budget){
-  // Save budget to the client's own sheet, tab "_budgets"
-  // First read existing rows to check if month exists
   try{
-    const url=APPS_SCRIPT_URL+'?action=read&sheetId='+encodeURIComponent(state.spreadsheetId)+'&tab=_budgets';
-    const res=await fetch(url);
-    const d=await res.json();
-    const rows=(d.values||[]);
-    const rowIndex=rows.findIndex(r=>String(r[0])===String(month));
-    if(rowIndex>=0){
-      // Update existing row
-      await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'update',sheetId:state.spreadsheetId,sheetTab:'_budgets',rowIndex:rowIndex+1,row:[month,budget]})});
-    } else {
-      // Append new row
-      await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'append',sheetId:state.spreadsheetId,sheetTab:'_budgets',row:[month,budget]})});
-    }
+    await fetch(APPS_SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'saveBudget',clientId,month,budget})
+    });
   }catch{}
 }
 function getBudgetKey(){return selectedMonth==='all'?'all':selectedMonth;}
@@ -240,9 +223,18 @@ async function loadClientCRM(client){
         localBudgets[month]=parseFloat(localStorage.getItem(k))||0;
       }
     }
-    // Use budgets saved in client object (works on all devices)
-    state.budgets={...localBudgets,...(client.budgets||{})};
-    updateBudgetInput();
+    // Load from localStorage first, then fetch from server
+    state.budgets=localBudgets;
+    fetchBudgets(String(client.id)).then(b=>{
+      state.budgets={...localBudgets,...b};
+      Object.keys(b).forEach(k=>{
+        if(parseFloat(b[k])>0)localStorage.setItem('budget_'+client.id+'_'+k,b[k]);
+      });
+      updateBudgetInput();
+      if(document.getElementById('view-analytics')?.style.display!=='none'){
+        renderFinance();renderAnalytics();
+      }
+    }).catch(()=>{});
     buildMonthFilter();renderTable();renderSidebar();updateBudgetInput();
     setSyncStatus('נטען ✓','success');startAutoSync();
   }catch(e){setSyncStatus('שגיאה: '+e.message,'error');showToast('שגיאה: '+e.message,'error');}
@@ -356,7 +348,13 @@ function switchTab(tab,btn){
   if(tab==='analytics'){
     renderFinance();renderAnalytics();
     // Always fetch fresh budget from server (critical for mobile)
-    // budgets already loaded from client object
+    fetchBudgets(state.clientId).then(b=>{
+      state.budgets={...state.budgets,...b};
+      Object.keys(b).forEach(k=>{
+        if(parseFloat(b[k])>0)localStorage.setItem('budget_'+state.clientId+'_'+k,b[k]);
+      });
+      updateBudgetInput();renderFinance();renderAnalytics();
+    }).catch(()=>{});
   }
 }
 
