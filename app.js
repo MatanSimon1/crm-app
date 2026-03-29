@@ -337,9 +337,14 @@ function switchTab(tab,btn){
   va.style.padding=tab==='analytics'?'1.1rem':'';
   document.getElementById('fin-section').style.display=tab==='analytics'?'block':'none';
   if(tab==='analytics'){
-    syncMobileBudget();renderFinance();renderAnalytics();
+    renderFinance();renderAnalytics();
+    // Always fetch fresh budget from server (critical for mobile)
     fetchBudgets(state.clientId).then(b=>{
       state.budgets={...state.budgets,...b};
+      // Save to localStorage
+      Object.keys(b).forEach(k=>{
+        if(parseFloat(b[k])>0)localStorage.setItem('budget_'+state.clientId+'_'+k,b[k]);
+      });
       updateBudgetInput();syncMobileBudget();renderFinance();renderAnalytics();
     }).catch(()=>{});
   }
