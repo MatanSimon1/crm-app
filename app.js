@@ -419,6 +419,16 @@ function updateBudgetInput(){
     if(lel)lel.textContent='תקציב '+HEB_MONTHS[parseInt(mo)-1]+' '+y+' (₪)';
   }
 }
+function saveBudgetClick(){
+  const btn=document.querySelector('.btn-save-budget');
+  if(btn){btn.textContent='...';btn.disabled=true;}
+  onBudgetChange().then(()=>{
+    if(btn){btn.textContent='✓';btn.disabled=false;}
+    showToast('תקציב נשמר ✓','success');
+  }).catch(()=>{
+    if(btn){btn.textContent='✓';btn.disabled=false;}
+  });
+}
 async function onBudgetChange(){
   const val=parseFloat(document.getElementById('budget').value)||0;
   const key=getBudgetKey();
