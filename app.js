@@ -66,12 +66,18 @@ function getBudgetKey(){return selectedMonth==='all'?'all':selectedMonth;}
 function getCurrentBudget(){
   const key=getBudgetKey();
   if(key==='all')return 0;
-  // Try exact match first (2026-03)
-  if(state.budgets[key])return parseFloat(state.budgets[key])||0;
-  // Try matching any key that contains the year-month
+  // Check all budget keys - match by year and month number
   const[y,mo]=key.split('-');
-  const match=Object.keys(state.budgets).find(k=>k.includes(y)&&k.includes(' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)-1]+' '));
-  return match?parseFloat(state.budgets[match])||0:0;
+  const moNum=parseInt(mo);
+  for(const k of Object.keys(state.budgets)){
+    // Match "2026-03" format
+    if(k===key)return parseFloat(state.budgets[k])||0;
+    // Match old "Sun Mar 01 2026..." format
+    const d=new Date(k);
+    if(!isNaN(d)&&d.getFullYear()===parseInt(y)&&d.getMonth()+1===moNum)
+      return parseFloat(state.budgets[k])||0;
+  }
+  return 0;
 }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
@@ -440,13 +446,21 @@ function renderSidebar(){
 
 function getTotalBudget(){
   if(selectedMonth!=='all') return getCurrentBudget();
-  // Only sum budgets for months that actually have leads
+  // Sum budgets for months that have leads
   const monthsWithLeads=new Set();
   state.leads.forEach(l=>{
     const p=(l.date||'').split('/');
     if(p.length===3)monthsWithLeads.add(p[2]+'-'+p[1].padStart(2,'0'));
   });
-  return [...monthsWithLeads].reduce((s,m)=>s+(parseFloat(state.budgets[m])||0),0);
+  let total=0;
+  monthsWithLeads.forEach(m=>{
+    // Temporarily set selectedMonth to get correct budget
+    const prev=selectedMonth;
+    selectedMonth=m;
+    total+=getCurrentBudget();
+    selectedMonth=prev;
+  });
+  return total;
 }
 
 function renderFinance(){
