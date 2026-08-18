@@ -45,22 +45,23 @@ let currentPage=1;
 let selectedMonth='all';
 
 async function fetchClients(){
-  const res=await fetch(APPS_SCRIPT_URL+'?action=getClients');
+  const res=await fetchWithRetry(APPS_SCRIPT_URL+'?action=getClients',{},{retries:2,timeoutMs:12000,
+    onRetry:(a,t)=>{const el=document.getElementById('client-list');if(el)el.innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">עדיין טוען... (ניסיון '+(a+1)+'/'+(t+1)+')</div>';}});
   const d=await res.json();
   if(d.status==='error') throw new Error(d.message);
   return d.clients||[];
 }
 async function pushSaveClient(client){
-  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveClient',client})});
+  await fetchWithRetry(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveClient',client})},{retries:2,timeoutMs:12000});
   await sleep(1200);
 }
 async function pushDeleteClient(clientId){
-  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteClient',clientId})});
+  await fetchWithRetry(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteClient',clientId})},{retries:2,timeoutMs:12000});
   await sleep(1200);
 }
 async function fetchBudgets(clientId){
   try{
-    const res=await fetch(APPS_SCRIPT_URL+'?action=getBudgets&clientId='+encodeURIComponent(clientId));
+    const res=await fetchWithRetry(APPS_SCRIPT_URL+'?action=getBudgets&clientId='+encodeURIComponent(clientId),{},{retries:1,timeoutMs:10000});
     const d=await res.json();
     return d.budgets||{};
   }catch{return{};}
@@ -68,7 +69,7 @@ async function fetchBudgets(clientId){
 async function saveBudget(clientId,month,budget){
   try{
     // GET works reliably with Apps Script no-cors
-    await fetch(APPS_SCRIPT_URL+'?action=saveBudget&clientId='+encodeURIComponent(clientId)+'&month='+encodeURIComponent(month)+'&budget='+encodeURIComponent(budget));
+    await fetchWithRetry(APPS_SCRIPT_URL+'?action=saveBudget&clientId='+encodeURIComponent(clientId)+'&month='+encodeURIComponent(month)+'&budget='+encodeURIComponent(budget),{},{retries:2,timeoutMs:12000});
   }catch{}
 }
 function getBudgetKey(){return selectedMonth==='all'?'all':selectedMonth;}
@@ -89,6 +90,34 @@ function getCurrentBudget(){
   return 0;
 }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function friendlyError(e){
+  if(e&&e.name==='AbortError')return 'השרת לא הגיב — נסו שוב בעוד רגע';
+  return (e&&e.message)||'שגיאה לא ידועה';
+}
+
+// Apps Script has no SLA and occasionally goes cold/unresponsive for 10-20+
+// seconds (or longer) with no error — a plain fetch() just hangs forever in
+// that case. This wraps any call with a per-attempt timeout (so a stuck
+// request fails fast instead of hanging) and a couple of retries (so a
+// transient blip self-heals instead of surfacing as a hard failure).
+async function fetchWithRetry(url,options={},{retries=2,timeoutMs=12000,retryDelayMs=1500,onRetry}={}){
+  let lastErr;
+  for(let attempt=0;attempt<=retries;attempt++){
+    if(attempt>0&&onRetry)onRetry(attempt,retries);
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      const res=await fetch(url,{...options,signal:controller.signal});
+      clearTimeout(timer);
+      return res;
+    }catch(e){
+      clearTimeout(timer);
+      lastErr=e;
+      if(attempt<retries)await sleep(retryDelayMs);
+    }
+  }
+  throw lastErr;
+}
 
 document.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('crm_session');
@@ -144,7 +173,7 @@ async function showAdminScreen(){
     adminClients=await fetchClients();
     renderAdminClients();
     document.getElementById('admin-stats').innerHTML='<span style="color:var(--text2);font-size:12px">'+adminClients.length+' לקוחות</span>';
-  }catch(e){document.getElementById('client-list').innerHTML='<div style="color:var(--red);padding:2rem">שגיאה: '+e.message+'</div>';}
+  }catch(e){document.getElementById('client-list').innerHTML='<div style="color:var(--red);padding:2rem">שגיאה: '+friendlyError(e)+'</div>';}
 }
 function renderAdminClients(){
   const el=document.getElementById('client-list');
@@ -210,7 +239,7 @@ async function saveClient(){
     document.getElementById('client-modal').classList.remove('open');
     showAdminToast(id?'לקוח עודכן ✓':'לקוח נוסף ✓','success');
     await showAdminScreen();
-  }catch(e){showAdminToast('שגיאה: '+e.message,'error');}
+  }catch(e){showAdminToast('שגיאה: '+friendlyError(e),'error');}
   btn.innerHTML='שמור';btn.disabled=false;
 }
 async function deleteClient(id){
@@ -269,7 +298,7 @@ async function loadClientCRM(client){
     }).catch(()=>{});
     buildMonthFilter();renderTable();renderSidebar();updateBudgetInput();
     setSyncStatus('נטען ✓','success');startAutoSync();
-  }catch(e){setSyncStatus('שגיאה: '+e.message,'error');showToast('שגיאה: '+e.message,'error');}
+  }catch(e){setSyncStatus('שגיאה: '+friendlyError(e),'error');showToast('שגיאה: '+friendlyError(e),'error');}
 }
 
 function parseDate(raw){
@@ -304,7 +333,9 @@ function extractSheetId(url){const m=url.match(/\/d\/([a-zA-Z0-9-_]+)/);return m
 
 async function fetchFromSheet(){
   const url=APPS_SCRIPT_URL+'?action=read&sheetId='+encodeURIComponent(state.spreadsheetId)+'&tab='+encodeURIComponent(state.sheetTab);
-  const res=await fetch(url);if(!res.ok)throw new Error('HTTP '+res.status);
+  const res=await fetchWithRetry(url,{},{retries:2,timeoutMs:12000,
+    onRetry:(a,t)=>setSyncStatus('עדיין טוען... (ניסיון '+(a+1)+'/'+(t+1)+')','saving')});
+  if(!res.ok)throw new Error('HTTP '+res.status);
   const data=await res.json();if(data.status==='error')throw new Error(data.message);
   const rows=data.values||[];if(rows.length<1){state.leads=[];return;}
   const headers=rows[0].map(h=>String(h||'').trim().toLowerCase());
@@ -347,8 +378,8 @@ function leadToRow(l){
   return row;
 }
 async function scriptPost(payload){
-  await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({...payload,sheetId:state.spreadsheetId,sheetTab:state.sheetTab})});
+  await fetchWithRetry(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({...payload,sheetId:state.spreadsheetId,sheetTab:state.sheetTab})},{retries:2,timeoutMs:12000});
   await sleep(1400);
 }
 async function appendToSheet(lead){await scriptPost({action:'append',row:leadToRow(lead)});}
@@ -719,7 +750,7 @@ async function saveLead(){
     await appendToSheet(lead);await fetchFromSheet();buildMonthFilter();
     closeModal();renderTable();renderSidebar();
     showToast('ליד נוסף ✓','success');setSyncStatus('עודכן ✓','success');
-  }catch(e){showToast('שגיאה: '+e.message,'error');setSyncStatus('שמירה נכשלה','error');}
+  }catch(e){showToast('שגיאה: '+friendlyError(e),'error');setSyncStatus('שמירה נכשלה','error');}
   finally{saveBtn.innerHTML='<span id="save-btn-text">שמור לגיליון</span>';saveBtn.disabled=false;}
 }
 function confirmDelete(id){
