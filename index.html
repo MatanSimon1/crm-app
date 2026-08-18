@@ -79,7 +79,13 @@
         <div class="form-group"><label>שם הלקוח / עסק *</label><input type="text" id="cm-name" placeholder="לדוגמה: GYM Dilan"/></div>
         <div class="form-group"><label>שם משתמש *</label><input type="text" id="cm-username" placeholder="gymdilan"/></div>
       </div>
-      <div class="form-group"><label>סיסמא *</label><input type="password" id="cm-password" placeholder="סיסמא לכניסה של הלקוח"/></div>
+      <div class="form-group">
+        <label>סיסמא *</label>
+        <div style="position:relative">
+          <input type="password" id="cm-password" placeholder="סיסמא לכניסה של הלקוח" style="padding-left:38px"/>
+          <button type="button" onclick="togglePassVis('cm-password','cm-pass-eye')" id="cm-pass-eye" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0;line-height:1">👁</button>
+        </div>
+      </div>
       <div class="form-group">
         <label>קישור לגיליון Google *</label>
         <input type="url" id="cm-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..."/>

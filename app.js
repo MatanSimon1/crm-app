@@ -28,9 +28,18 @@ function goPage(p){
   document.querySelector('.main-area')?.scrollTo(0,0);
   document.querySelector('.cards-wrap')?.scrollTo(0,0);
 }
-function isAdminSession(){return JSON.parse(localStorage.getItem('crm_session')||'{}').role==='admin';}
+function getSessionRole(){return JSON.parse(localStorage.getItem('crm_session')||'{}').role;}
+// "Admin-tier" session viewing via the admin dashboard — both master (full
+// access) and admin (view-only) count, used for admin-only UI like the
+// back-to-admin button. Does NOT imply write access — see isMasterSession.
+function isAdminSession(){const r=getSessionRole();return r==='admin'||r==='master';}
+function isMasterSession(){return getSessionRole()==='master';}
+// Can the CURRENT viewer edit/delete leads & budgets in the CRM they're
+// looking at? True for the client's own login (always manages their own
+// leads) and for master admin. False for a view-only ('admin') session.
+function canEditLeads(){const r=getSessionRole();return r==='client'||r==='master';}
 const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-let state={leads:[],spreadsheetId:'',sheetTab:'Main CRM',clientName:'',clientId:'',sortField:'date',sortDir:-1,editingId:null,nextId:1,avgMonths:5,colMap:null,budgets:{}};
+let state={leads:[],spreadsheetId:'',sheetTab:'Main CRM',clientName:'',clientId:'',sortField:'date',sortDir:-1,editingId:null,nextId:1,avgMonths:5,colMap:null,budgets:{},readOnly:false};
 const PAGE_SIZE=50;
 let currentPage=1;
 let selectedMonth='all';
@@ -85,7 +94,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('crm_session');
   if(saved){
     const s=JSON.parse(saved);
-    if(s.role==='admin') showAdminScreen();
+    if(s.role==='admin'||s.role==='master') showAdminScreen();
     else if(s.role==='client') reloadClientSession(s);
   } else showLoginScreen();
 });
@@ -103,8 +112,9 @@ async function doLogin(){
   document.getElementById('login-error').style.display='none';
   const btn=document.querySelector('#login-screen .btn-primary');
   btn.innerHTML='<div class="spinner"></div>';btn.disabled=true;
-  if(ADMIN_USERS.some(a=>a.u.toLowerCase()===u.toLowerCase()&&a.p===String(p))){
-    localStorage.setItem('crm_session',JSON.stringify({role:'admin'}));
+  const matchedAdmin=ADMIN_USERS.find(a=>a.u.toLowerCase()===u.toLowerCase()&&a.p===String(p));
+  if(matchedAdmin){
+    localStorage.setItem('crm_session',JSON.stringify({role:matchedAdmin.role||'admin'}));
     btn.innerHTML='כניסה';btn.disabled=false;
     showAdminScreen();return;
   }
@@ -128,6 +138,8 @@ let adminClients=[];
 async function showAdminScreen(){
   hideAll();document.getElementById('admin-screen').classList.add('active');
   document.getElementById('client-list').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">טוען לקוחות...</div>';
+  const addBtn=document.querySelector('button[onclick="openAddClient()"]');
+  if(addBtn)addBtn.style.display=isMasterSession()?'':'none';
   try{
     adminClients=await fetchClients();
     renderAdminClients();
@@ -137,6 +149,7 @@ async function showAdminScreen(){
 function renderAdminClients(){
   const el=document.getElementById('client-list');
   if(!adminClients.length){el.innerHTML='<div style="color:var(--text3);font-size:14px;padding:2rem;text-align:center">עדיין אין לקוחות — לחץ "הוסף לקוח" ↑</div>';return;}
+  const canEdit=isMasterSession();
   el.innerHTML=adminClients.map(c=>`
     <div class="client-row">
       <div class="client-row-info" onclick="adminOpenClient('${c.id}')">
@@ -145,12 +158,13 @@ function renderAdminClients(){
       </div>
       <div class="client-row-actions">
         <button class="btn-row-admin" onclick="adminOpenClient('${c.id}')">פתח CRM</button>
-        <button class="btn-row-admin" onclick="editClient('${c.id}')">ערוך</button>
-        <button class="btn-row-admin danger" onclick="deleteClient('${c.id}')">מחק</button>
+        ${canEdit?`<button class="btn-row-admin" onclick="editClient('${c.id}')">ערוך</button>
+        <button class="btn-row-admin danger" onclick="deleteClient('${c.id}')">מחק</button>`:''}
       </div>
     </div>`).join('');
 }
 function openAddClient(){
+  if(!isMasterSession())return;
   document.getElementById('client-modal-title').textContent='הוסף לקוח';
   document.getElementById('cm-id').value='';
   ['cm-name','cm-username','cm-password','cm-sheet-url','cm-logo-url'].forEach(id=>document.getElementById(id).value='');
@@ -161,6 +175,7 @@ function openAddClient(){
   setTimeout(()=>document.getElementById('cm-name').focus(),80);
 }
 function editClient(id){
+  if(!isMasterSession())return;
   const c=adminClients.find(x=>x.id===id);if(!c)return;
   document.getElementById('client-modal-title').textContent='ערוך לקוח';
   document.getElementById('cm-id').value=c.id;
@@ -175,6 +190,7 @@ function editClient(id){
   document.getElementById('client-modal').classList.add('open');
 }
 async function saveClient(){
+  if(!isMasterSession())return;
   const id=document.getElementById('cm-id').value;
   const name=document.getElementById('cm-name').value.trim();
   const username=document.getElementById('cm-username').value.trim();
@@ -198,6 +214,7 @@ async function saveClient(){
   btn.innerHTML='שמור';btn.disabled=false;
 }
 async function deleteClient(id){
+  if(!isMasterSession())return;
   const c=adminClients.find(x=>x.id===id);if(!c)return;
   if(!confirm('למחוק את הלקוח "'+c.name+'"?'))return;
   try{await pushDeleteClient(id);showAdminToast('לקוח נמחק','success');await showAdminScreen();}
@@ -221,8 +238,11 @@ async function loadClientCRM(client){
   document.getElementById('s-client-name').textContent=client.name;
   const mn=document.getElementById('s-client-name-mobile');if(mn)mn.textContent=client.name;
 
-  const isAdmin=JSON.parse(localStorage.getItem('crm_session')||'{}').role==='admin';
-  document.getElementById('btn-back-admin').style.display=isAdmin?'flex':'none';
+  document.getElementById('btn-back-admin').style.display=isAdminSession()?'flex':'none';
+  state.readOnly=!canEditLeads();
+  document.querySelectorAll('button[onclick="openModal()"]').forEach(b=>b.style.display=state.readOnly?'none':'');
+  const budgetInput=document.getElementById('budget');if(budgetInput)budgetInput.disabled=state.readOnly;
+  const budgetInputM=document.getElementById('budget-mobile');if(budgetInputM)budgetInputM.disabled=state.readOnly;
   setSyncStatus('טוען...','saving');
   try{
     await fetchFromSheet();
@@ -428,6 +448,7 @@ function showBudgetSaveBtn(){
   document.getElementById('budget-saved-label').style.display='none';
 }
 function saveBudgetClick(){
+  if(state.readOnly)return;
   const btn=document.getElementById('budget-save-btn');
   const lbl=document.getElementById('budget-saved-label');
   if(btn){btn.textContent='...';btn.disabled=true;}
@@ -440,6 +461,7 @@ function saveBudgetClick(){
   });
 }
 async function onBudgetChange(){
+  if(state.readOnly)return;
   const val=parseFloat(document.getElementById('budget').value)||0;
   const key=getBudgetKey();
   state.budgets[key]=val;
@@ -563,7 +585,9 @@ function renderTable(){
   renderPagination(currentPage,totalPages);
   if(!allRows.length){if(tbody)tbody.innerHTML='';if(empty)empty.style.display='flex';if(cards)cards.innerHTML='<div style="padding:3rem;text-align:center;color:var(--text3)">לא נמצאו לידים</div>';return;}
   if(empty)empty.style.display='none';
-  const isAdmin=isAdminSession();
+  // Delete has always been admin-only (never available from a client's own
+  // login) — now specifically master-only, so view-only admins don't get it.
+  const isAdmin=isMasterSession();
   if(tbody)tbody.innerHTML=rows.map(l=>{
     const isReg=l.status==='נרשם';
     const rowStyle=isReg?'background:rgba(74,222,128,0.08);border-right:3px solid rgba(74,222,128,0.5);':'border-right:3px solid transparent;';
@@ -619,10 +643,13 @@ function openInlineEdit(id){
   document.getElementById('ie-platform').textContent=platformLabel(l.platform);
   document.getElementById('ie-campaign').textContent=l.campaign||'—';
   document.getElementById('ie-ad').textContent=l.ad||'—';
+  const ro=state.readOnly;
   document.getElementById('ie-status-pills').innerHTML=STATUSES.map(s=>
-    `<button class="pill ${l.status===s?'active':''}" data-val="${s}" onclick="iePickStatus(this)">${s}</button>`).join('');
+    `<button class="pill ${l.status===s?'active':''}" data-val="${s}" ${ro?'disabled':`onclick="iePickStatus(this)"`}>${s}</button>`).join('');
   const incomeGroup=document.getElementById('ie-income-group');
   if(incomeGroup) incomeGroup.style.display=l.status==='נרשם'?'block':'none';
+  ['ie-name','ie-phone','ie-notes','ie-income'].forEach(id=>document.getElementById(id).disabled=ro);
+  const saveBtn=document.getElementById('ie-save-btn');if(saveBtn)saveBtn.style.display=ro?'none':'';
   document.getElementById('inline-edit-modal').classList.add('open');
 }
 function iePickStatus(btn){
@@ -635,6 +662,7 @@ function iePickStatus(btn){
 function ieGetStatus(){const a=document.querySelector('#ie-status-pills .pill.active');return a?a.dataset.val:'ליד חדש';}
 function closeInlineEdit(){document.getElementById('inline-edit-modal').classList.remove('open');}
 async function saveInlineEdit(){
+  if(state.readOnly)return;
   const l=state.leads.find(x=>x.id===state.editingId);if(!l)return;
   const status=ieGetStatus();
   const income=document.getElementById('ie-income').value.trim();
@@ -664,6 +692,7 @@ async function saveInlineEdit(){
 }
 
 function openModal(){
+  if(state.readOnly)return;
   state.editingId=null;
   document.getElementById('modal-title').textContent='הוסף ליד חדש';
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
@@ -678,6 +707,7 @@ function selectStatus(btn){document.querySelectorAll('#modal-overlay .pill').for
 function setStatusPill(val){document.querySelectorAll('#modal-overlay .pill').forEach(p=>p.classList.toggle('active',p.dataset.val===val));}
 function getSelectedStatus(){const a=document.querySelector('#modal-overlay .pill.active');return a?a.dataset.val:'ליד חדש';}
 async function saveLead(){
+  if(state.readOnly)return;
   const raw=document.getElementById('f-date').value;const dp=raw?raw.split('-'):[];
   const date=dp.length===3?`${dp[2]}/${dp[1]}/${dp[0]}`:raw;
   const name=document.getElementById('f-name').value.trim();const phone=document.getElementById('f-phone').value.trim();
@@ -693,9 +723,8 @@ async function saveLead(){
   finally{saveBtn.innerHTML='<span id="save-btn-text">שמור לגיליון</span>';saveBtn.disabled=false;}
 }
 function confirmDelete(id){
-  // Only show confirm for admin — clients see nothing
-  const session=JSON.parse(localStorage.getItem('crm_session')||'{}');
-  if(session.role!=='admin'){showToast('אין הרשאה למחיקה','error');return;}
+  // Only master can delete — clients and view-only admins see nothing
+  if(!isMasterSession()){showToast('אין הרשאה למחיקה','error');return;}
   const lead=state.leads.find(x=>x.id===id);if(!lead)return;
   if(!confirm(`⚠️ מחיקה סופית\n\nהאם למחוק את "${lead.name}"?\nפעולה זו אינה ניתנת לביטול.`))return;
   deleteLead(id);
@@ -727,9 +756,9 @@ function waLead(phone){
   window.open('https://wa.me/'+clean,'_blank');
 }
 
-function togglePassVis(){
-  const inp=document.getElementById('login-password');
-  const btn=document.getElementById('pass-eye');
+function togglePassVis(inputId,btnId){
+  const inp=document.getElementById(inputId||'login-password');
+  const btn=document.getElementById(btnId||'pass-eye');
   if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
   else{inp.type='password';btn.textContent='👁';}
 }
